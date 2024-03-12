@@ -32,6 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// InsightsIntegration allows your operator to manage a proxy
+// for sending Red Hat Insights reports from Java-based workloads
+// to the Runtimes Inventory service.
 type InsightsIntegration struct {
 	Manager         ctrl.Manager
 	Log             *logr.Logger
@@ -41,6 +44,11 @@ type InsightsIntegration struct {
 	common.OSUtils
 }
 
+// NewInsightsIntegration creates a new InsightsIntegration using
+// your operator's Manager and logger.
+// Provide the operator's name and namespace,
+// which can be discovered using the Kubernetes downward API.
+// The User Agent prefix must be an approved UHC Auth Proxy prefix.
 func NewInsightsIntegration(mgr ctrl.Manager, operatorName string, operatorNamespace string, userAgentPrefix string, log *logr.Logger) *InsightsIntegration {
 	return &InsightsIntegration{
 		Manager:         mgr,
@@ -52,6 +60,9 @@ func NewInsightsIntegration(mgr ctrl.Manager, operatorName string, operatorNames
 	}
 }
 
+// Setup adds a controller to your manager, which creates and
+// manages the HTTP proxy container that workloads may use
+// to send reports to Red Hat Insights.
 func (i *InsightsIntegration) Setup() (*url.URL, error) {
 	var proxyUrl *url.URL
 	// This will happen when running the operator locally
