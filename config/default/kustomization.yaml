@@ -1,13 +1,3 @@
-# Adds namespace to all resources.
-namespace: runtimes-inventory-operator-system
-
-# Value of this field is prepended to the
-# names of all resources, e.g. a deployment named
-# "wordpress" becomes "alices-wordpress".
-# Note that it should also match with the prefix (text before '-') of the namespace
-# field above.
-namePrefix: runtimes-inventory-operator-
-
 # Labels to add to all resources and selectors.
 #labels:
 #- includeSelectors: true
@@ -15,7 +5,8 @@ namePrefix: runtimes-inventory-operator-
 #    someName: someValue
 
 resources:
-- ../crd
+# TODO No CRDs currently
+#- ../crd
 - ../rbac
 - ../manager
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
@@ -26,13 +17,64 @@ resources:
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 #- ../prometheus
 
-patchesStrategicMerge:
+patches:
 # Protect the /metrics endpoint by putting it behind auth.
 # If you want your controller-manager to expose the /metrics
 # endpoint w/o any authn/z, please comment the following line.
-- manager_auth_proxy_patch.yaml
+- path: manager_auth_proxy_patch.yaml
+# Override namespace replacement for global pull secret role/role binding
 
-
+# Specify patches for pull secret RBAC as transformers to get the proper ordering we need
+transformers:
+  # Value of this field is prepended to the
+  # names of all resources, e.g. a deployment named
+  # "wordpress" becomes "alices-wordpress".
+  # Note that it should also match with the prefix (text before '-') of the namespace
+  # field above.
+  - |-
+    apiVersion: builtin
+    kind: PrefixTransformer
+    metadata:
+      name: prefix
+    prefix: runtimes-inventory-operator-
+    fieldSpecs:
+    - path: metadata/name
+  # Adds namespace to all resources.
+  - |-
+    apiVersion: builtin
+    kind: NamespaceTransformer
+    metadata:
+      name: ns
+      namespace: runtimes-inventory-operator-system
+    setRoleBindingSubjects: allServiceAccounts
+  - |-
+    apiVersion: builtin
+    kind: PatchTransformer
+    metadata:
+      name: patchRole
+    target:
+      group: "rbac.authorization.k8s.io"
+      version: v1
+      kind: Role
+      name: runtimes-inventory-operator-pull-secret-role
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-config
+  - |-
+    apiVersion: builtin
+    kind: PatchTransformer
+    metadata:
+      name: patchBinding
+    target:
+      group: "rbac.authorization.k8s.io"
+      version: v1
+      kind: RoleBinding
+      name: runtimes-inventory-operator-pull-secret-rolebinding
+    patch: |-
+      - op: replace
+        path: /metadata/namespace
+        value: openshift-config
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml

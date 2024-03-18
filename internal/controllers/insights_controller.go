@@ -70,8 +70,9 @@ func NewInsightsReconciler(config *InsightsReconcilerConfig) (*InsightsReconcile
 	}, nil
 }
 
-// +kubebuilder:rbac:groups=apps,resources=deployments;deployments/finalizers,verbs=*
-// +kubebuilder:rbac:groups="",resources=services;secrets;configmaps;configmaps/finalizers,verbs=*
+// +kubebuilder:rbac:namespace=system,groups=apps,resources=deployments;deployments/finalizers,verbs=create;update;get;list;watch
+// +kubebuilder:rbac:namespace=system,groups="",resources=services;secrets;configmaps/finalizers,verbs=create;update;get;list;watch
+// +kubebuilder:rbac:namespace=system,groups="",resources=configmaps,verbs=create;update;delete;get;list;watch
 // +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch
 
 // Reconcile processes the Insights proxy deployment and configures it accordingly
