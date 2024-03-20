@@ -26,10 +26,13 @@ import (
 	"github.com/RedHatInsights/runtimes-inventory-operator/pkg/insights"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	//+kubebuilder:scaffold:imports
@@ -63,6 +66,11 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
+	cacheOpts := cache.Options{
+		ByObject: map[client.Object]cache.ByObject{
+			&corev1.Secret{}: {},
+		},
+	}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -81,6 +89,7 @@ func main() {
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
+		Cache: cacheOpts,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
