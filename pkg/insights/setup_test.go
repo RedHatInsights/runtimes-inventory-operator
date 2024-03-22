@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controllers/test"
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controller/test"
 	"github.com/RedHatInsights/runtimes-inventory-operator/pkg/insights"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

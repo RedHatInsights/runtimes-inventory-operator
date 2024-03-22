@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers
+package controller
 
 import (
 	"context"
 
-	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controllers/test"
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controller/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"

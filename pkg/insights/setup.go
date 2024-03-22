@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/RedHatInsights/runtimes-inventory-operator/internal/common"
-	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controllers"
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controller"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -110,7 +110,7 @@ func (i *InsightsIntegration) isInsightsEnabled() bool {
 }
 
 func (i *InsightsIntegration) createInsightsController() error {
-	config := &controllers.InsightsReconcilerConfig{
+	config := &controller.InsightsReconcilerConfig{
 		Client:          i.Manager.GetClient(),
 		Log:             ctrl.Log.WithName("controllers").WithName("Insights"),
 		Scheme:          i.Manager.GetScheme(),
@@ -118,7 +118,7 @@ func (i *InsightsIntegration) createInsightsController() error {
 		UserAgentPrefix: i.userAgentPrefix,
 		OSUtils:         i.OSUtils,
 	}
-	controller, err := controllers.NewInsightsReconciler(config)
+	controller, err := controller.NewInsightsReconciler(config)
 	if err != nil {
 		return err
 	}

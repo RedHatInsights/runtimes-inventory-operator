@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers_test
+package controller_test
 
 import (
 	"context"
 	"strconv"
 
-	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controllers"
-	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controllers/test"
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controller"
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controller/test"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -37,7 +37,7 @@ import (
 
 type insightsTestInput struct {
 	client      ctrlclient.Client
-	controller  *controllers.InsightsReconciler
+	controller  *controller.InsightsReconciler
 	objs        []ctrlclient.Object
 	opNamespace string
 	*test.TestUtilsConfig
@@ -85,7 +85,7 @@ var _ = Describe("InsightsController", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 
-			config := &controllers.InsightsReconcilerConfig{
+			config := &controller.InsightsReconcilerConfig{
 				Client:          t.client,
 				Scheme:          s,
 				Log:             logger,
@@ -93,7 +93,7 @@ var _ = Describe("InsightsController", func() {
 				UserAgentPrefix: t.UserAgentPrefix,
 				OSUtils:         test.NewTestOSUtils(t.TestUtilsConfig),
 			}
-			controller, err := controllers.NewInsightsReconciler(config)
+			controller, err := controller.NewInsightsReconciler(config)
 			Expect(err).ToNot(HaveOccurred())
 			t.controller = controller
 		})
