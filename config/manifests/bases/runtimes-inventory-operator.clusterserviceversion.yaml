@@ -1,0 +1,43 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+  name: runtimes-inventory-operator.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions: {}
+  description: Operator support for Runtimes Inventory
+  displayName: Runtimes Inventory Operator
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - insights
+  - java
+  - runtimes
+  - red hat
+  links:
+  - name: Runtimes Inventory Operator
+    url: https://github.com/RedHatInsights/runtimes-inventory-operator
+  maintainers:
+  - email: ebaron@redhat.com
+    name: Elliott Baron
+  maturity: alpha
+  minKubeVersion: 1.25.0
+  provider:
+    name: Red Hat
+    url: https://www.redhat.com
+  version: 0.0.0
