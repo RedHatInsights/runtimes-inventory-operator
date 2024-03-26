@@ -105,6 +105,8 @@ func main() {
 	if len(operatorNamespace) > 0 {
 		cacheOpts = cache.Options{
 			ByObject: map[client.Object]cache.ByObject{
+				// Cache secret named "pull-secret" in openshift-config,
+				// in addition to any secret in the operator's namespace
 				&corev1.Secret{}: {
 					Namespaces: map[string]cache.Config{
 						"openshift-config": {
@@ -114,6 +116,7 @@ func main() {
 					},
 				},
 			},
+			// For all other resources, cache only objects in the operator's namespace
 			DefaultNamespaces: map[string]cache.Config{
 				operatorNamespace: {},
 			},
@@ -152,9 +155,9 @@ func main() {
 		operatorName, operatorNamespace, userAgentPrefix, &setupLog).Setup()
 	if err != nil {
 		setupLog.Error(err, "failed to set up Insights integration")
-		os.Exit(1) // TODO do we want to exit?
+	} else {
+		setupLog.Info("Insights proxy set up", "url", insightsURL.String())
 	}
-	setupLog.Info("Insights proxy set up", "url", insightsURL.String())
 
 	//+kubebuilder:scaffold:builder
 
