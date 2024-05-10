@@ -29,6 +29,9 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 WORKDIR /
 COPY --from=builder /workspace/manager .
+
+RUN mkdir /licenses
+COPY LICENSE /licenses/
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
