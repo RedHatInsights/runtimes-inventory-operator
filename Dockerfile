@@ -1,9 +1,8 @@
 # Build the manager binary
-FROM golang:1.21 as builder
+FROM registry.access.redhat.com/ubi8/go-toolset:latest as builder
 ARG TARGETOS
 ARG TARGETARCH
 
-WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum
@@ -24,14 +23,21 @@ COPY pkg/ pkg/
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
 # the docker BUILDPLATFORM arg will be linux/arm64 when for Apple x86 it will be linux/amd64. Therefore,
 # by leaving it empty we can ensure that the container and binary shipped on it will have the same platform.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
+RUN GOEXPERIMENT=strictfipsruntime \
+    GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
+    go build -a -o /opt/app-root/manager -tags strictfipsruntime cmd/main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
-WORKDIR /
-COPY --from=builder /workspace/manager .
+
+# Update packages
+RUN microdnf -y --setopt=install_weak_deps=0 --setopt=tsflags=nodocs update
+RUN microdnf -y clean all
+
+COPY --from=builder /opt/app-root/manager .
 
 RUN mkdir /licenses
 COPY LICENSE /licenses/
-USER 65532:65532
+
+USER 1001
 
 ENTRYPOINT ["/manager"]
