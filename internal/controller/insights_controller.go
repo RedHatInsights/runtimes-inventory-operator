@@ -35,9 +35,10 @@ import (
 // InsightsReconciler reconciles the Insights proxy for Cryostat agents
 type InsightsReconciler struct {
 	*InsightsReconcilerConfig
-	backendDomain string
-	proxyDomain   string
-	proxyImageTag string
+	backendDomain      string
+	proxyDomain        string
+	proxyImageTag      string
+	testPullSecretName string
 }
 
 // InsightsReconcilerConfig contains configuration to create an InsightsReconciler
@@ -61,12 +62,15 @@ func NewInsightsReconciler(config *InsightsReconcilerConfig) (*InsightsReconcile
 		return nil, errors.New("no proxy image tag provided for Insights")
 	}
 	proxyDomain := config.GetEnv(common.EnvInsightsProxyDomain)
+	// the pull secret might be empty
+	testPullSecret := config.GetEnv(common.EnvTestPullSecretName)
 
 	return &InsightsReconciler{
 		InsightsReconcilerConfig: config,
 		backendDomain:            backendDomain,
 		proxyDomain:              proxyDomain,
 		proxyImageTag:            imageTag,
+		testPullSecretName:       testPullSecret,
 	}, nil
 }
 

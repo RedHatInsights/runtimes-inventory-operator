@@ -120,7 +120,16 @@ func (r *InsightsReconciler) reconcileProxyService(ctx context.Context) error {
 func (r *InsightsReconciler) getTokenFromPullSecret(ctx context.Context) (*string, error) {
 	// Get the global pull secret
 	pullSecret := &corev1.Secret{}
-	err := r.Client.Get(ctx, types.NamespacedName{Namespace: "openshift-config", Name: "pull-secret"}, pullSecret)
+
+	var pullSecretName = "pull-secret"
+	var pullSecretNamespace = "openshift-config"
+
+	if len(r.testPullSecretName) > 0 {
+		pullSecretName = r.testPullSecretName
+		pullSecretNamespace = r.Namespace
+	}
+
+	err := r.Client.Get(ctx, types.NamespacedName{Namespace: pullSecretNamespace, Name: pullSecretName}, pullSecret)
 	if err != nil {
 		return nil, err
 	}
