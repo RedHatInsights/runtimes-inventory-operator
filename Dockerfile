@@ -29,6 +29,17 @@ RUN GOEXPERIMENT=strictfipsruntime \
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
+LABEL com.redhat.component="runtimes-inventory-rhel8-operator-container"
+LABEL name="insights-runtimes-tech-preview/runtimes-inventory-rhel8-operator"
+LABEL version="0.0.1-dev"
+LABEL maintainer="Red Hat Insights for Runtimes"
+LABEL summary="Operator support for Runtimes Inventory"
+LABEL description="A reusable component for Red Hat operators managing Java workloads. \
+This component allows these operators to more easily integrate their workloads into \
+the Red Hat Insights Runtimes Inventory."
+LABEL io.k8s.display-name="Runtimes Inventory Operator"
+LABEL io.openshift.tags="insights,java,openshift"
+
 # Update packages
 RUN microdnf -y --setopt=install_weak_deps=0 --setopt=tsflags=nodocs update
 RUN microdnf -y clean all
