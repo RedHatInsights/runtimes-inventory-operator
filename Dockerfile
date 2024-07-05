@@ -29,10 +29,6 @@ RUN GOEXPERIMENT=strictfipsruntime \
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
 
-# Update packages
-RUN microdnf -y --setopt=install_weak_deps=0 --setopt=tsflags=nodocs update
-RUN microdnf -y clean all
-
 COPY --from=builder /opt/app-root/manager .
 
 RUN mkdir /licenses
