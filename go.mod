@@ -3,13 +3,13 @@ module github.com/RedHatInsights/runtimes-inventory-operator
 go 1.20
 
 require (
-	github.com/go-logr/logr v1.4.1
+	github.com/go-logr/logr v1.4.2
 	github.com/onsi/ginkgo/v2 v2.17.3
 	github.com/onsi/gomega v1.33.1
 	github.com/openshift/api v0.0.0-20240228005710-4511c790cc60
-	k8s.io/api v0.28.10
-	k8s.io/apimachinery v0.28.10
-	k8s.io/client-go v0.28.10
+	k8s.io/api v0.28.11
+	k8s.io/apimachinery v0.28.11
+	k8s.io/client-go v0.28.11
 	sigs.k8s.io/controller-runtime v0.16.6
 )
 
