@@ -615,7 +615,7 @@ spec:
       - "false"
   - name: sast-snyk-check
     runAfter:
-    - clone-repository-amd64
+    - build-container
     taskRef:
       params:
       - name: name
