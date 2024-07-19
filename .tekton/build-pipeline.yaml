@@ -524,8 +524,6 @@ spec:
     params:
     - name: BINARY_IMAGE
       value: $(params.output-image)
-    - name: BASE_IMAGES
-      value: $(tasks.build-container-amd64.results.BASE_IMAGES_DIGESTS)
     runAfter:
     - build-container
     taskRef:
