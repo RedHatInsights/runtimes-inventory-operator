@@ -16,7 +16,9 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
+	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -27,7 +29,7 @@ import (
 	configv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
+	kruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,7 +43,7 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
+	scheme   = kruntime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
 )
 
@@ -151,12 +153,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	insightsURL, err := insights.NewInsightsIntegration(mgr,
-		operatorName, operatorNamespace, userAgentPrefix, &setupLog).Setup()
-	if err != nil {
-		setupLog.Error(err, "failed to set up Insights integration")
+	// TODO APICast is not currently available for arm64, disable it for now
+	if runtime.GOARCH == "arm64" {
+		setupLog.Info(fmt.Sprintf("Insights proxy unavailable for %s. Skipping setup", runtime.GOARCH))
 	} else {
-		setupLog.Info("Insights proxy set up", "url", insightsURL.String())
+		insightsURL, err := insights.NewInsightsIntegration(mgr,
+			operatorName, operatorNamespace, userAgentPrefix, &setupLog).Setup()
+		if err != nil {
+			setupLog.Error(err, "failed to set up Insights integration")
+		} else {
+			setupLog.Info("Insights proxy set up", "url", insightsURL.String())
+		}
 	}
 
 	//+kubebuilder:scaffold:builder
