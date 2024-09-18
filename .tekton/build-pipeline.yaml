@@ -507,7 +507,7 @@ spec:
       - name: name
         value: build-image-manifest
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-build-image-manifest:0.1@sha256:809547601cf1ededc93ab2fa9ce1d8624e423255c4a7b65915af11f1e960a9ed
+        value: quay.io/redhat-appstudio-tekton-catalog/task-build-image-manifest:0.1@sha256:8b24f9abe949403512a73f8b467b4a2cde395707a8fb4d31b9b1c11665a3253d
       - name: kind
         value: task
       resolver: bundles
@@ -578,7 +578,7 @@ spec:
       - name: name
         value: clair-scan
       - name: bundle
-        value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.2@sha256:77f18ffeb96a9c8f5767ea3c789b66b2521e8416d8160a8e38ad9c3f5fc78676
+        value: quay.io/redhat-appstudio-tekton-catalog/task-clair-scan:0.2@sha256:2d0ad97ddccf5b1921438f63c2001e330c2307de9fda21877678ca98a1bdeac3
       - name: kind
         value: task
       resolver: bundles
