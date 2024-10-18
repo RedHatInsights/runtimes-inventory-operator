@@ -18,53 +18,23 @@ metadata:
   namespace: insights-runtimes-tenant
 spec:
   params:
-  - name: dockerfile
-    value: Dockerfile
   - name: git-url
     value: '{{source_url}}'
-  - name: image-expires-after
-    value: 5d
-  - name: output-image
-    value: quay.io/redhat-user-workloads/insights-runtimes-tenant/runtimes-inventory-operator/runtimes-inventory-operator:on-pr-{{revision}}
-  - name: path-context
-    value: .
   - name: revision
     value: '{{revision}}'
+  - name: output-image
+    value: quay.io/redhat-user-workloads/insights-runtimes-tenant/runtimes-inventory-operator/runtimes-inventory-operator:on-pr-{{revision}}
+  - name: image-expires-after
+    value: 5d
+  - name: dockerfile
+    value: Dockerfile
+  - name: path-context
+    value: .
   pipelineRef:
-    name: build-pipeline
+    name: build-pipeline    
+  taskRunTemplate: {}
   workspaces:
-  - name: workspace-amd64
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-  - name: workspace-arm64
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-  - name: workspace-ppc64le
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-  - name: workspace-s390x
-    volumeClaimTemplate:
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
+status: {}
