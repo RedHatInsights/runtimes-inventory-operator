@@ -20,6 +20,8 @@ const (
 	ProxyServiceName         = ProxyDeploymentName
 	ProxyServicePort         = 8080
 	ProxySecretName          = "apicastconf"
+	PullSecretName           = "pull-secret"
+	PullSecretNamespace      = "openshift-config"
 	EnvInsightsBackendDomain = "INSIGHTS_BACKEND_DOMAIN"
 	EnvInsightsProxyDomain   = "INSIGHTS_PROXY_DOMAIN"
 	EnvInsightsEnabled       = "INSIGHTS_ENABLED"

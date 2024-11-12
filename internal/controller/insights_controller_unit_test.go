@@ -102,6 +102,19 @@ var _ = Describe("InsightsController", func() {
 				result := t.controller.isPullSecretOrProxyConfig(context.Background(), secret)
 				Expect(result).To(BeEmpty())
 			})
+			Context("with a test pull secret", func() {
+				BeforeEach(func() {
+					t.EnvTestPullSecret = &t.NewTestPullSecret().Name
+				})
+				It("should reconcile test pull secret", func() {
+					result := t.controller.isPullSecretOrProxyConfig(context.Background(), t.NewTestPullSecret())
+					Expect(result).To(ConsistOf(t.deploymentReconcileRequest()))
+				})
+				It("should not reconcile global pull secret", func() {
+					result := t.controller.isPullSecretOrProxyConfig(context.Background(), t.NewGlobalPullSecret())
+					Expect(result).To(BeEmpty())
+				})
+			})
 		})
 
 		Context("for deployments", func() {
