@@ -23,6 +23,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/common"
 	"github.com/RedHatInsights/runtimes-inventory-operator/pkg/insights"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -111,8 +112,8 @@ func main() {
 				// in addition to any secret in the operator's namespace
 				&corev1.Secret{}: {
 					Namespaces: map[string]cache.Config{
-						"openshift-config": {
-							FieldSelector: fields.OneTermEqualSelector("metadata.name", "pull-secret"),
+						common.PullSecretNamespace: {
+							FieldSelector: fields.OneTermEqualSelector("metadata.name", common.PullSecretName),
 						},
 						operatorNamespace: {},
 					},

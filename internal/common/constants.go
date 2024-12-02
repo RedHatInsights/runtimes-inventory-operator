@@ -20,9 +20,12 @@ const (
 	ProxyServiceName         = ProxyDeploymentName
 	ProxyServicePort         = 8080
 	ProxySecretName          = "apicastconf"
+	PullSecretName           = "pull-secret"
+	PullSecretNamespace      = "openshift-config"
 	EnvInsightsBackendDomain = "INSIGHTS_BACKEND_DOMAIN"
 	EnvInsightsProxyDomain   = "INSIGHTS_PROXY_DOMAIN"
 	EnvInsightsEnabled       = "INSIGHTS_ENABLED"
+	EnvTestPullSecretName    = "INSIGHTS_TEST_PULL_SECRET_NAME"
 	// Environment variable to override the Insights proxy image
 	EnvInsightsProxyImageTag = "RELATED_IMAGE_INSIGHTS_PROXY"
 )

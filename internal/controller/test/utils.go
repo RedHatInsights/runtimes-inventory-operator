@@ -24,6 +24,7 @@ type TestUtilsConfig struct {
 	EnvInsightsProxyImageTag *string
 	EnvInsightsBackendDomain *string
 	EnvInsightsProxyDomain   *string
+	EnvTestPullSecret        *string
 }
 
 type testOSUtils struct {
@@ -43,6 +44,9 @@ func NewTestOSUtils(config *TestUtilsConfig) *testOSUtils {
 	}
 	if config.EnvInsightsProxyDomain != nil {
 		envs["INSIGHTS_PROXY_DOMAIN"] = *config.EnvInsightsProxyDomain
+	}
+	if config.EnvTestPullSecret != nil {
+		envs["INSIGHTS_TEST_PULL_SECRET_NAME"] = *config.EnvTestPullSecret
 	}
 	return &testOSUtils{envs: envs}
 }

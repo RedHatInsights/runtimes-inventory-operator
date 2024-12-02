@@ -187,6 +187,34 @@ var _ = Describe("InsightsController", func() {
 					Expect(actual.Data["config.json"]).To(MatchJSON(expected.StringData["config.json"]))
 				})
 			})
+			Context("with a test pull secret", func() {
+				BeforeEach(func() {
+					pullSecret := t.NewTestPullSecret()
+					t.EnvTestPullSecret = &pullSecret.Name
+					t.objs = append(t.objs, pullSecret)
+				})
+				JustBeforeEach(func() {
+					result, err := t.reconcile()
+					Expect(err).ToNot(HaveOccurred())
+					Expect(result).To(Equal(reconcile.Result{}))
+				})
+				It("should create the APICast config secret", func() {
+					expected := t.NewInsightsProxySecretWithTestPullSecret()
+					actual := &corev1.Secret{}
+					err := t.client.Get(context.Background(), types.NamespacedName{
+						Name:      expected.Name,
+						Namespace: expected.Namespace,
+					}, actual)
+					Expect(err).ToNot(HaveOccurred())
+
+					Expect(actual.Labels).To(Equal(expected.Labels))
+					Expect(actual.Annotations).To(Equal(expected.Annotations))
+					Expect(metav1.IsControlledBy(actual, t.getProxyConfigMap())).To(BeTrue())
+					Expect(actual.Data).To(HaveLen(1))
+					Expect(actual.Data).To(HaveKey("config.json"))
+					Expect(actual.Data["config.json"]).To(MatchJSON(expected.StringData["config.json"]))
+				})
+			})
 		})
 		Context("updating the deployment", func() {
 			BeforeEach(func() {

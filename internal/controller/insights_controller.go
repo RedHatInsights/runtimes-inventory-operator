@@ -38,6 +38,7 @@ type InsightsReconciler struct {
 	backendDomain string
 	proxyDomain   string
 	proxyImageTag string
+	pullSecretObj types.NamespacedName
 }
 
 // InsightsReconcilerConfig contains configuration to create an InsightsReconciler
@@ -61,12 +62,27 @@ func NewInsightsReconciler(config *InsightsReconcilerConfig) (*InsightsReconcile
 		return nil, errors.New("no proxy image tag provided for Insights")
 	}
 	proxyDomain := config.GetEnv(common.EnvInsightsProxyDomain)
+	// Check if a substitute pull secret for testing has been provided
+	testPullSecret := config.GetEnv(common.EnvTestPullSecretName)
+	var pullSecretObj types.NamespacedName
+	if len(testPullSecret) > 0 {
+		pullSecretObj = types.NamespacedName{
+			Name:      testPullSecret,
+			Namespace: config.Namespace,
+		}
+	} else {
+		pullSecretObj = types.NamespacedName{
+			Name:      common.PullSecretName,
+			Namespace: common.PullSecretNamespace,
+		}
+	}
 
 	return &InsightsReconciler{
 		InsightsReconcilerConfig: config,
 		backendDomain:            backendDomain,
 		proxyDomain:              proxyDomain,
 		proxyImageTag:            imageTag,
+		pullSecretObj:            pullSecretObj,
 	}, nil
 }
 
@@ -105,7 +121,7 @@ func (r *InsightsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *InsightsReconciler) isPullSecretOrProxyConfig(ctx context.Context, secret client.Object) []reconcile.Request {
-	if !(secret.GetNamespace() == "openshift-config" && secret.GetName() == "pull-secret") &&
+	if !(secret.GetNamespace() == r.pullSecretObj.Namespace && secret.GetName() == r.pullSecretObj.Name) &&
 		!(secret.GetNamespace() == r.Namespace && secret.GetName() == common.ProxySecretName) {
 		return nil
 	}
