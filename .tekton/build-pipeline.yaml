@@ -456,3 +456,5 @@ spec:
     optional: true
   - name: netrc
     optional: true
+  - name: test-source
+    optional: true
