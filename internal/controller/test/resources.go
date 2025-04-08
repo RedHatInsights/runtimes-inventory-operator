@@ -233,6 +233,73 @@ func (r *InsightsTestResources) NewInsightsProxySecretWithProxyDomain() *corev1.
 	}
 }
 
+func (r *InsightsTestResources) NewInsightsProxySecretWithTestPullSecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "apicastconf",
+			Namespace: r.Namespace,
+		},
+		StringData: map[string]string{
+			"config.json": fmt.Sprintf(`{
+				"services": [
+				  {
+					"id": "1",
+					"backend_version": "1",
+					"proxy": {
+					  "hosts": ["insights-proxy","insights-proxy.%s.svc.cluster.local"],
+					  "api_backend": "https://insights.example.com:443/",
+					  "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
+					  "policy_chain": [
+						{
+						  "name": "default_credentials",
+						  "version": "builtin",
+						  "configuration": {
+							"auth_type": "user_key",
+							"user_key": "dummy_key"
+						  }
+						},
+						{
+						  "name": "headers",
+						  "version": "builtin",
+						  "configuration": {
+							"request": [
+							  {
+								"op": "set",
+								"header": "Authorization",
+								"value_type": "plain",
+								"value": "Bearer test"
+							  },
+							  {
+								"op": "set",
+								"header": "User-Agent",
+								"value_type": "plain",
+								"value": "%s cluster/abcde"
+							  }
+							]
+						  }
+						},
+						{
+						  "name": "apicast.policy.apicast"
+						}
+					  ],
+					  "proxy_rules": [
+						{
+						  "http_method": "POST",
+						  "pattern": "/",
+						  "metric_system_name": "hits",
+						  "delta": 1,
+						  "parameters": [],
+						  "querystring_parameters": {}
+						}
+					  ]
+					}
+				  }
+				]
+			  }`, r.Namespace, r.UserAgentPrefix),
+		},
+	}
+}
+
 func (r *InsightsTestResources) NewInsightsProxyDeployment() *appsv1.Deployment {
 	var resources *corev1.ResourceRequirements
 	if r.Resources != nil {
@@ -407,6 +474,19 @@ func (r *InsightsTestResources) NewClusterVersion() *configv1.ClusterVersion {
 		},
 		Spec: configv1.ClusterVersionSpec{
 			ClusterID: "abcde",
+		},
+	}
+}
+
+func (r *InsightsTestResources) NewTestPullSecret() *corev1.Secret {
+	config := `{"auths":{"example.com":{"auth":"world"},"cloud.openshift.com":{"auth":"test"}}}`
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-pull-secret",
+			Namespace: r.Namespace,
+		},
+		Data: map[string][]byte{
+			corev1.DockerConfigJsonKey: []byte(config),
 		},
 	}
 }
