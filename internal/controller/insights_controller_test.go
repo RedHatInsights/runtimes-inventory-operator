@@ -91,6 +91,7 @@ var _ = Describe("InsightsController", func() {
 				Log:             logger,
 				Namespace:       t.Namespace,
 				UserAgentPrefix: t.UserAgentPrefix,
+				OperatorName:    t.NewOperatorDeployment().Name,
 				OSUtils:         test.NewTestOSUtils(t.TestUtilsConfig),
 			}
 			controller, err := controller.NewInsightsReconciler(config)

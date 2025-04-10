@@ -15,6 +15,8 @@
 package common
 
 import (
+	"fmt"
+	"hash/fnv"
 	"os"
 
 	corev1 "k8s.io/api/core/v1"
@@ -53,6 +55,14 @@ func MergeLabelsAndAnnotations(dest *metav1.ObjectMeta, srcLabels, srcAnnotation
 	for k, v := range srcAnnotations {
 		dest.Annotations[k] = v
 	}
+}
+
+// NamespaceUniqueName appends a hash of the provided suffix to the name.
+func NamespaceUniqueName(name string, suffixToHash string) string {
+	// Use the 128-bit FNV-1 checksum of the suffix.
+	hash := fnv.New128()
+	hash.Write([]byte(suffixToHash))
+	return fmt.Sprintf("%s-%x", name, hash.Sum([]byte{}))
 }
 
 // SeccompProfile returns a SeccompProfile for the restricted

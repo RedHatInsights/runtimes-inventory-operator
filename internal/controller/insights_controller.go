@@ -47,6 +47,7 @@ type InsightsReconcilerConfig struct {
 	Scheme          *runtime.Scheme
 	Namespace       string
 	UserAgentPrefix string
+	OperatorName    string
 	common.OSUtils
 }
 
@@ -106,27 +107,27 @@ func (r *InsightsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *InsightsReconciler) isPullSecretOrProxyConfig(ctx context.Context, secret client.Object) []reconcile.Request {
 	if !(secret.GetNamespace() == "openshift-config" && secret.GetName() == "pull-secret") &&
-		!(secret.GetNamespace() == r.Namespace && secret.GetName() == common.ProxySecretName) {
+		!(secret.GetNamespace() == r.Namespace && secret.GetName() == common.ProxySecretName(r.OperatorName)) {
 		return nil
 	}
 	return r.proxyDeploymentRequest()
 }
 
 func (r *InsightsReconciler) isProxyDeployment(ctx context.Context, deploy client.Object) []reconcile.Request {
-	if deploy.GetNamespace() != r.Namespace || deploy.GetName() != common.ProxyDeploymentName {
+	if deploy.GetNamespace() != r.Namespace || deploy.GetName() != common.ProxyDeploymentName(r.OperatorName) {
 		return nil
 	}
 	return r.proxyDeploymentRequest()
 }
 
 func (r *InsightsReconciler) isProxyService(ctx context.Context, svc client.Object) []reconcile.Request {
-	if svc.GetNamespace() != r.Namespace || svc.GetName() != common.ProxyServiceName {
+	if svc.GetNamespace() != r.Namespace || svc.GetName() != common.ProxyServiceName(r.OperatorName) {
 		return nil
 	}
 	return r.proxyDeploymentRequest()
 }
 
 func (r *InsightsReconciler) proxyDeploymentRequest() []reconcile.Request {
-	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: r.Namespace, Name: common.ProxyDeploymentName}}
+	req := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: r.Namespace, Name: common.ProxyDeploymentName(r.OperatorName)}}
 	return []reconcile.Request{req}
 }
