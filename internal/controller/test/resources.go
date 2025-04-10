@@ -55,7 +55,7 @@ func (r *InsightsTestResources) NewGlobalPullSecret() *corev1.Secret {
 func (r *InsightsTestResources) NewOperatorDeployment() *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "test-controller-manager",
+			Name:      "test-operator",
 			Namespace: r.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -83,10 +83,13 @@ func (r *InsightsTestResources) NewOperatorDeployment() *appsv1.Deployment {
 	}
 }
 
+// FNV-1 128-bit hash of "test-operator"
+const suffix = "c3f06a36e4abd94b849f4d1f07e29cfe"
+
 func (r *InsightsTestResources) NewProxyConfigMap() *corev1.ConfigMap {
 	return &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "insights-proxy",
+			Name:      "insights-proxy-" + suffix,
 			Namespace: r.Namespace,
 		},
 	}
@@ -95,7 +98,7 @@ func (r *InsightsTestResources) NewProxyConfigMap() *corev1.ConfigMap {
 func (r *InsightsTestResources) NewInsightsProxySecret() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apicastconf",
+			Name:      "apicastconf-" + suffix,
 			Namespace: r.Namespace,
 		},
 		StringData: map[string]string{
@@ -105,7 +108,7 @@ func (r *InsightsTestResources) NewInsightsProxySecret() *corev1.Secret {
 					"id": "1",
 					"backend_version": "1",
 					"proxy": {
-					  "hosts": ["insights-proxy","insights-proxy.%s.svc.cluster.local"],
+					  "hosts": ["insights-proxy-%s","insights-proxy-%s.%s.svc"],
 					  "api_backend": "https://insights.example.com:443/",
 					  "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
 					  "policy_chain": [
@@ -154,7 +157,7 @@ func (r *InsightsTestResources) NewInsightsProxySecret() *corev1.Secret {
 					}
 				  }
 				]
-			  }`, r.Namespace, r.UserAgentPrefix),
+			  }`, suffix, suffix, r.Namespace, r.UserAgentPrefix),
 		},
 	}
 }
@@ -162,7 +165,7 @@ func (r *InsightsTestResources) NewInsightsProxySecret() *corev1.Secret {
 func (r *InsightsTestResources) NewInsightsProxySecretWithProxyDomain() *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apicastconf",
+			Name:      "apicastconf-" + suffix,
 			Namespace: r.Namespace,
 		},
 		StringData: map[string]string{
@@ -172,7 +175,7 @@ func (r *InsightsTestResources) NewInsightsProxySecretWithProxyDomain() *corev1.
 					"id": "1",
 					"backend_version": "1",
 					"proxy": {
-					  "hosts": ["insights-proxy","insights-proxy.%s.svc.cluster.local"],
+					  "hosts": ["insights-proxy-%s","insights-proxy-%s.%s.svc"],
 					  "api_backend": "https://insights.example.com:443/",
 					  "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
 					  "policy_chain": [
@@ -228,7 +231,7 @@ func (r *InsightsTestResources) NewInsightsProxySecretWithProxyDomain() *corev1.
 					}
 				  }
 				]
-			  }`, r.Namespace, r.UserAgentPrefix),
+			  }`, suffix, suffix, r.Namespace, r.UserAgentPrefix),
 		},
 	}
 }
@@ -251,22 +254,22 @@ func (r *InsightsTestResources) NewInsightsProxyDeployment() *appsv1.Deployment 
 	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "insights-proxy",
+			Name:      "insights-proxy-" + suffix,
 			Namespace: r.Namespace,
 			Labels: map[string]string{
-				"app": "insights-proxy",
+				"app": "insights-proxy-" + suffix,
 			},
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "insights-proxy",
+					"app": "insights-proxy-" + suffix,
 				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "insights-proxy",
+						"app": "insights-proxy-" + suffix,
 					},
 				},
 				Spec: corev1.PodSpec{
@@ -346,7 +349,7 @@ func (r *InsightsTestResources) NewInsightsProxyDeployment() *appsv1.Deployment 
 							Name: "gateway-configuration-volume",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: "apicastconf",
+									SecretName: "apicastconf-" + suffix,
 									Items: []corev1.KeyToPath{
 										{
 											Key:  "config.json",
@@ -371,16 +374,16 @@ func (r *InsightsTestResources) NewInsightsProxyDeployment() *appsv1.Deployment 
 func (r *InsightsTestResources) NewInsightsProxyService() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "insights-proxy",
+			Name:      "insights-proxy-" + suffix,
 			Namespace: r.Namespace,
 			Labels: map[string]string{
-				"app": "insights-proxy",
+				"app": "insights-proxy-" + suffix,
 			},
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 			Selector: map[string]string{
-				"app": "insights-proxy",
+				"app": "insights-proxy-" + suffix,
 			},
 			Ports: []corev1.ServicePort{
 				{

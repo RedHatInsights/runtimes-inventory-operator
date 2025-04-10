@@ -72,11 +72,12 @@ var _ = Describe("InsightsController", func() {
 			t.client = fake.NewClientBuilder().WithScheme(s).WithObjects(t.objs...).Build()
 
 			config := &InsightsReconcilerConfig{
-				Client:    t.client,
-				Scheme:    s,
-				Log:       logger,
-				Namespace: t.Namespace,
-				OSUtils:   test.NewTestOSUtils(t.TestUtilsConfig),
+				Client:       t.client,
+				Scheme:       s,
+				Log:          logger,
+				Namespace:    t.Namespace,
+				OperatorName: t.NewOperatorDeployment().Name,
+				OSUtils:      test.NewTestOSUtils(t.TestUtilsConfig),
 			}
 			controller, err := NewInsightsReconciler(config)
 			Expect(err).ToNot(HaveOccurred())
@@ -141,5 +142,5 @@ var _ = Describe("InsightsController", func() {
 })
 
 func (t *insightsUnitTestInput) deploymentReconcileRequest() reconcile.Request {
-	return reconcile.Request{NamespacedName: types.NamespacedName{Name: "insights-proxy", Namespace: t.Namespace}}
+	return reconcile.Request{NamespacedName: types.NamespacedName{Name: t.NewInsightsProxyDeployment().Name, Namespace: t.Namespace}}
 }

@@ -47,12 +47,12 @@ func (r *InsightsReconciler) reconcileInsights(ctx context.Context) error {
 func (r *InsightsReconciler) reconcilePullSecret(ctx context.Context) error {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.ProxySecretName,
+			Name:      common.ProxySecretName(r.OperatorName),
 			Namespace: r.Namespace,
 		},
 	}
 	owner := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: common.InsightsConfigMapName,
+	err := r.Client.Get(ctx, types.NamespacedName{Name: common.InsightsConfigMapName(r.OperatorName),
 		Namespace: r.Namespace}, owner)
 	if err != nil {
 		return err
@@ -69,7 +69,8 @@ func (r *InsightsReconciler) reconcilePullSecret(ctx context.Context) error {
 	}
 
 	params := &apiCastConfigParams{
-		FrontendDomains:       fmt.Sprintf("\"%s\",\"%s.%s.svc.cluster.local\"", common.ProxyServiceName, common.ProxyServiceName, r.Namespace),
+		FrontendDomains: fmt.Sprintf("\"%s\",\"%s.%s.svc\"", common.ProxyServiceName(r.OperatorName),
+			common.ProxyServiceName(r.OperatorName), r.Namespace),
 		BackendInsightsDomain: r.backendDomain,
 		ProxyDomain:           r.proxyDomain,
 		HeaderValue:           *token,
@@ -86,12 +87,12 @@ func (r *InsightsReconciler) reconcilePullSecret(ctx context.Context) error {
 func (r *InsightsReconciler) reconcileProxyDeployment(ctx context.Context) error {
 	deploy := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.ProxyDeploymentName,
+			Name:      common.ProxyDeploymentName(r.OperatorName),
 			Namespace: r.Namespace,
 		},
 	}
 	owner := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: common.InsightsConfigMapName,
+	err := r.Client.Get(ctx, types.NamespacedName{Name: common.InsightsConfigMapName(r.OperatorName),
 		Namespace: r.Namespace}, owner)
 	if err != nil {
 		return err
@@ -103,12 +104,12 @@ func (r *InsightsReconciler) reconcileProxyDeployment(ctx context.Context) error
 func (r *InsightsReconciler) reconcileProxyService(ctx context.Context) error {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.ProxyServiceName,
+			Name:      common.ProxyServiceName(r.OperatorName),
 			Namespace: r.Namespace,
 		},
 	}
 	owner := &corev1.ConfigMap{}
-	err := r.Client.Get(ctx, types.NamespacedName{Name: common.InsightsConfigMapName,
+	err := r.Client.Get(ctx, types.NamespacedName{Name: common.InsightsConfigMapName(r.OperatorName),
 		Namespace: r.Namespace}, owner)
 	if err != nil {
 		return err
@@ -189,7 +190,7 @@ func (r *InsightsReconciler) createOrUpdateProxySecret(ctx context.Context, secr
 
 func (r *InsightsReconciler) createOrUpdateProxyDeployment(ctx context.Context, deploy *appsv1.Deployment, owner metav1.Object) error {
 	op, err := controllerutil.CreateOrUpdate(ctx, r.Client, deploy, func() error {
-		labels := map[string]string{"app": common.ProxyDeploymentName}
+		labels := map[string]string{"app": common.ProxyDeploymentName(r.OperatorName)}
 		annotations := map[string]string{}
 		common.MergeLabelsAndAnnotations(&deploy.ObjectMeta, labels, annotations)
 		// Set the config map as controller
@@ -201,7 +202,7 @@ func (r *InsightsReconciler) createOrUpdateProxyDeployment(ctx context.Context, 
 			// Selector is immutable, avoid modifying if possible
 			deploy.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": common.ProxyDeploymentName,
+					"app": common.ProxyDeploymentName(r.OperatorName),
 				},
 			}
 		}
@@ -222,7 +223,7 @@ func (r *InsightsReconciler) createOrUpdateProxyDeployment(ctx context.Context, 
 func (r *InsightsReconciler) createOrUpdateProxyService(ctx context.Context, svc *corev1.Service, owner metav1.Object) error {
 	op, err := controllerutil.CreateOrUpdate(ctx, r.Client, svc, func() error {
 		// Update labels and annotations
-		labels := map[string]string{"app": common.ProxyDeploymentName}
+		labels := map[string]string{"app": common.ProxyDeploymentName(r.OperatorName)}
 		annotations := map[string]string{}
 		common.MergeLabelsAndAnnotations(&svc.ObjectMeta, labels, annotations)
 
@@ -233,7 +234,7 @@ func (r *InsightsReconciler) createOrUpdateProxyService(ctx context.Context, svc
 		// Update the service type
 		svc.Spec.Type = corev1.ServiceTypeClusterIP
 		svc.Spec.Selector = map[string]string{
-			"app": common.ProxyDeploymentName,
+			"app": common.ProxyDeploymentName(r.OperatorName),
 		}
 		svc.Spec.Ports = []corev1.ServicePort{
 			{
@@ -280,7 +281,7 @@ func (r *InsightsReconciler) createOrUpdateProxyPodSpec(deploy *appsv1.Deploymen
 	container = &podSpec.Containers[0]
 
 	// Set fields that are hard-coded by operator
-	container.Name = common.ProxyDeploymentName
+	container.Name = common.ProxyDeploymentNamePrefix
 	container.Image = r.proxyImageTag
 	container.Env = []corev1.EnvVar{
 		{
@@ -357,7 +358,7 @@ func (r *InsightsReconciler) createOrUpdateProxyPodSpec(deploy *appsv1.Deploymen
 			Name: "gateway-configuration-volume",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: common.ProxySecretName,
+					SecretName: common.ProxySecretName(r.OperatorName),
 					Items: []corev1.KeyToPath{
 						{
 							Key:  "config.json",

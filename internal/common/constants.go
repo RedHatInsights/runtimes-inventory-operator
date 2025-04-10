@@ -15,14 +15,14 @@
 package common
 
 const (
-	InsightsConfigMapName    = "insights-proxy"
-	ProxyDeploymentName      = InsightsConfigMapName
-	ProxyServiceName         = ProxyDeploymentName
-	ProxyServicePort         = 8080
-	ProxySecretName          = "apicastconf"
-	EnvInsightsBackendDomain = "INSIGHTS_BACKEND_DOMAIN"
-	EnvInsightsProxyDomain   = "INSIGHTS_PROXY_DOMAIN"
-	EnvInsightsEnabled       = "INSIGHTS_ENABLED"
+	InsightsConfigMapNamePrefix = "insights-proxy"
+	ProxyDeploymentNamePrefix   = InsightsConfigMapNamePrefix
+	ProxyServiceNamePrefix      = ProxyDeploymentNamePrefix
+	ProxyServicePort            = 8080
+	ProxySecretNamePrefix       = "apicastconf"
+	EnvInsightsBackendDomain    = "INSIGHTS_BACKEND_DOMAIN"
+	EnvInsightsProxyDomain      = "INSIGHTS_PROXY_DOMAIN"
+	EnvInsightsEnabled          = "INSIGHTS_ENABLED"
 	// Environment variable to override the Insights proxy image
 	EnvInsightsProxyImageTag = "RELATED_IMAGE_INSIGHTS_PROXY"
 )

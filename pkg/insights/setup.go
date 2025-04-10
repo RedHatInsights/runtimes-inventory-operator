@@ -116,6 +116,7 @@ func (i *InsightsIntegration) createInsightsController() error {
 		Scheme:          i.Manager.GetScheme(),
 		Namespace:       i.opNamespace,
 		UserAgentPrefix: i.userAgentPrefix,
+		OperatorName:    i.opName,
 		OSUtils:         i.OSUtils,
 	}
 	controller, err := controller.NewInsightsReconciler(config)
@@ -140,7 +141,7 @@ func (i *InsightsIntegration) createConfigMap(ctx context.Context) error {
 
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.InsightsConfigMapName,
+			Name:      common.InsightsConfigMapName(i.opName),
 			Namespace: i.opNamespace,
 		},
 	}
@@ -161,7 +162,7 @@ func (i *InsightsIntegration) deleteConfigMap(ctx context.Context) error {
 	// Children will be garbage collected
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      common.InsightsConfigMapName,
+			Name:      common.InsightsConfigMapName(i.opName),
 			Namespace: i.opNamespace,
 		},
 	}
@@ -177,7 +178,7 @@ func (i *InsightsIntegration) deleteConfigMap(ctx context.Context) error {
 func (i *InsightsIntegration) getProxyURL() *url.URL {
 	return &url.URL{
 		Scheme: "http", // TODO add https support
-		Host: fmt.Sprintf("%s.%s.svc.cluster.local:%d", common.ProxyServiceName, i.opNamespace,
+		Host: fmt.Sprintf("%s.%s.svc.cluster.local:%d", common.ProxyServiceName(i.opName), i.opNamespace,
 			common.ProxyServicePort),
 	}
 }
