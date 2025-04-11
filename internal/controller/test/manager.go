@@ -59,7 +59,11 @@ func (m *FakeManager) GetAPIReader() client.Reader {
 }
 
 func (m *FakeManager) GetControllerOptions() config.Controller {
-	return config.Controller{}
+	return config.Controller{
+		// controller-runtime keeps a global cache of names for created controllers,
+		// and ensures they are unique. Override this for testing.
+		SkipNameValidation: &[]bool{true}[0],
+	}
 }
 
 func (m *FakeManager) GetLogger() logr.Logger {
