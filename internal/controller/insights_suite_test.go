@@ -63,7 +63,7 @@ var _ = BeforeSuite(func() {
 		CRDDirectoryPaths: []string{
 			// No CRDs defined
 			//filepath.Join("..", "..", "..", "config", "crd", "bases"),
-			filepath.Join(append(openshiftPrefix, "config", "v1")...),
+			filepath.Join(append(openshiftPrefix, "config", "v1", "zz_generated.crd-manifests", "0000_00_cluster-version-operator_01_clusterversions-Default.crd.yaml")...),
 		},
 		ErrorIfCRDPathMissing: true,
 	}

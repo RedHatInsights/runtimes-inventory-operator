@@ -4,8 +4,8 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    createdAt: "2024-08-28T13:37:54Z"
-    operators.operatorframework.io/builder: operator-sdk-v1.34.1
+    createdAt: "2025-04-11T16:09:01Z"
+    operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   labels:
     operatorframework.io/arch.amd64: supported
@@ -61,7 +61,7 @@ spec:
           app.kubernetes.io/created-by: runtimes-inventory-operator
           app.kubernetes.io/instance: controller-manager
           app.kubernetes.io/managed-by: kustomize
-          app.kubernetes.io/name: deployment
+          app.kubernetes.io/name: runtimes-inventory-operator
           app.kubernetes.io/part-of: runtimes-inventory-operator
           control-plane: controller-manager
         name: runtimes-inventory-operator-controller-manager
@@ -69,6 +69,7 @@ spec:
           replicas: 1
           selector:
             matchLabels:
+              app.kubernetes.io/name: runtimes-inventory-operator
               control-plane: controller-manager
           strategy: {}
           template:
@@ -76,36 +77,14 @@ spec:
               annotations:
                 kubectl.kubernetes.io/default-container: manager
               labels:
+                app.kubernetes.io/name: runtimes-inventory-operator
                 control-plane: controller-manager
             spec:
               containers:
               - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.14.1
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
-                securityContext:
-                  allowPrivilegeEscalation: false
-                  capabilities:
-                    drop:
-                    - ALL
-              - args:
-                - --health-probe-bind-address=:8081
-                - --metrics-bind-address=127.0.0.1:8080
+                - --metrics-bind-address=:8443
                 - --leader-elect
+                - --health-probe-bind-address=:8081
                 command:
                 - /manager
                 env:
