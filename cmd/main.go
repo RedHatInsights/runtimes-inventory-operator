@@ -16,9 +16,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"fmt"
 	"os"
-	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -176,17 +174,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO APICast is not currently available for arm64, disable it for now
-	if runtime.GOARCH == "arm64" {
-		setupLog.Info(fmt.Sprintf("Insights proxy unavailable for %s. Skipping setup", runtime.GOARCH))
+	insightsURL, err := insights.NewInsightsIntegration(mgr,
+		operatorName, operatorNamespace, userAgentPrefix, &setupLog).Setup()
+	if err != nil {
+		setupLog.Error(err, "failed to set up Insights integration")
 	} else {
-		insightsURL, err := insights.NewInsightsIntegration(mgr,
-			operatorName, operatorNamespace, userAgentPrefix, &setupLog).Setup()
-		if err != nil {
-			setupLog.Error(err, "failed to set up Insights integration")
-		} else {
-			setupLog.Info("Insights proxy set up", "url", insightsURL.String())
-		}
+		setupLog.Info("Insights proxy set up", "url", insightsURL.String())
 	}
 
 	//+kubebuilder:scaffold:builder
