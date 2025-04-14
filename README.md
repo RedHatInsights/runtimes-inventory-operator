@@ -19,7 +19,7 @@ customer.
 
 ### Environment Variables
 The following are required environment variables your operator must set:
-- `RELATED_IMAGE_INSIGHTS_PROXY`: the container image to be used for the APICast proxy (e.g. `registry.redhat.io/3scale-amp2/apicast-gateway-rhel8:3scale2.14`)
+- `RELATED_IMAGE_INSIGHTS_PROXY`: the container image to be used for the APICast proxy (e.g. `registry.redhat.io/3scale-amp2/apicast-gateway-rhel8:3scale2.15`)
 - `INSIGHTS_BACKEND_DOMAIN`: the Red Hat Insights server host where reports will be forwarded (e.g. `console.redhat.com`)
 - `INSIGHTS_ENABLED`: must be set to `true` in order for this component to run, this provides an opt-out mechanism for customers at the operator level
 
