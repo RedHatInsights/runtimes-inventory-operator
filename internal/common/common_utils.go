@@ -15,12 +15,18 @@
 package common
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"hash/fnv"
 	"os"
+	"slices"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // OSUtils is an abstraction on functionality that interacts with the operating system
@@ -63,6 +69,43 @@ func NamespaceUniqueName(name string, suffixToHash string) string {
 	hash := fnv.New128()
 	hash.Write([]byte(suffixToHash))
 	return fmt.Sprintf("%s-%x", name, hash.Sum([]byte{}))
+}
+
+const annotationSecretHash = "com.redhat.insights.runtimes/secret-hash"
+
+func AnnotateWithSecretHash(ctx context.Context, client client.Client, namespace string, names []string,
+	annotations map[string]string) (map[string]string, error) {
+	if annotations == nil {
+		annotations = map[string]string{}
+	}
+	result, err := hashSecrets(ctx, client, namespace, names)
+	if err != nil {
+		return nil, err
+	}
+	annotations[annotationSecretHash] = *result
+	return annotations, nil
+}
+
+func hashSecrets(ctx context.Context, client client.Client, namespace string, names []string) (*string, error) {
+	// Collect the JSON of all secret data, sorted by object name
+	combinedJSON := []byte{}
+	slices.Sort(names)
+	for _, name := range names {
+		secret := &corev1.Secret{}
+		err := client.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, secret)
+		if err != nil {
+			return nil, err
+		}
+		// Marshal secret data as JSON. Keys are sorted, see: [json.Marshal]
+		buf, err := json.Marshal(secret.Data)
+		if err != nil {
+			return nil, err
+		}
+		combinedJSON = append(combinedJSON, buf...)
+	}
+	// Hash the JSON with SHA256
+	hashed := fmt.Sprintf("%x", sha256.Sum256(combinedJSON))
+	return &hashed, nil
 }
 
 // SeccompProfile returns a SeccompProfile for the restricted

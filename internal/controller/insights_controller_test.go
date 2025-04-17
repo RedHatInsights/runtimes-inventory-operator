@@ -131,7 +131,7 @@ var _ = Describe("InsightsController", func() {
 					Expect(metav1.IsControlledBy(actual, t.getProxyConfigMap())).To(BeTrue())
 					Expect(actual.Data).To(HaveLen(1))
 					Expect(actual.Data).To(HaveKey("config.json"))
-					Expect(actual.Data["config.json"]).To(MatchJSON(expected.StringData["config.json"]))
+					Expect(actual.Data["config.json"]).To(MatchJSON(expected.Data["config.json"]))
 				})
 				It("should create the proxy deployment", func() {
 					expected := t.NewInsightsProxyDeployment()
@@ -165,6 +165,7 @@ var _ = Describe("InsightsController", func() {
 			Context("with a proxy domain", func() {
 				BeforeEach(func() {
 					t.EnvInsightsProxyDomain = &[]string{"proxy.example.com"}[0]
+					t.WithProxy = true
 				})
 				JustBeforeEach(func() {
 					result, err := t.reconcile()
@@ -172,7 +173,7 @@ var _ = Describe("InsightsController", func() {
 					Expect(result).To(Equal(reconcile.Result{}))
 				})
 				It("should create the APICast config secret", func() {
-					expected := t.NewInsightsProxySecretWithProxyDomain()
+					expected := t.NewInsightsProxySecret()
 					actual := &corev1.Secret{}
 					err := t.client.Get(context.Background(), types.NamespacedName{
 						Name:      expected.Name,
@@ -185,7 +186,18 @@ var _ = Describe("InsightsController", func() {
 					Expect(metav1.IsControlledBy(actual, t.getProxyConfigMap())).To(BeTrue())
 					Expect(actual.Data).To(HaveLen(1))
 					Expect(actual.Data).To(HaveKey("config.json"))
-					Expect(actual.Data["config.json"]).To(MatchJSON(expected.StringData["config.json"]))
+					Expect(actual.Data["config.json"]).To(MatchJSON(expected.Data["config.json"]))
+				})
+				It("should create the proxy deployment", func() {
+					expected := t.NewInsightsProxyDeployment()
+					actual := &appsv1.Deployment{}
+					err := t.client.Get(context.Background(), types.NamespacedName{
+						Name:      expected.Name,
+						Namespace: expected.Namespace,
+					}, actual)
+					Expect(err).ToNot(HaveOccurred())
+
+					t.checkProxyDeployment(actual, expected)
 				})
 			})
 		})

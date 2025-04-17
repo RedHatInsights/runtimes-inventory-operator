@@ -189,10 +189,15 @@ func (r *InsightsReconciler) createOrUpdateProxySecret(ctx context.Context, secr
 }
 
 func (r *InsightsReconciler) createOrUpdateProxyDeployment(ctx context.Context, deploy *appsv1.Deployment, owner metav1.Object) error {
+	// Add a hash of any mounted secrets, in order to trigger redeployment when they change
+	annotations, err := common.AnnotateWithSecretHash(ctx, r.Client, deploy.Namespace,
+		[]string{common.ProxySecretName(r.OperatorName)}, map[string]string{})
+	if err != nil {
+		return err
+	}
 	op, err := controllerutil.CreateOrUpdate(ctx, r.Client, deploy, func() error {
 		labels := map[string]string{"app": common.ProxyDeploymentName(r.OperatorName)}
-		annotations := map[string]string{}
-		common.MergeLabelsAndAnnotations(&deploy.ObjectMeta, labels, annotations)
+		common.MergeLabelsAndAnnotations(&deploy.ObjectMeta, labels, map[string]string{})
 		// Set the config map as controller
 		if err := controllerutil.SetControllerReference(owner, deploy, r.Scheme); err != nil {
 			return err
