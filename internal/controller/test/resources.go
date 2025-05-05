@@ -15,8 +15,11 @@
 package test
 
 import (
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 
+	"github.com/onsi/gomega"
 	configv1 "github.com/openshift/api/config/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +31,7 @@ import (
 type InsightsTestResources struct {
 	Namespace       string
 	UserAgentPrefix string
+	WithProxy       bool
 	Resources       *corev1.ResourceRequirements
 }
 
@@ -95,149 +99,151 @@ func (r *InsightsTestResources) NewProxyConfigMap() *corev1.ConfigMap {
 	}
 }
 
-func (r *InsightsTestResources) NewInsightsProxySecret() *corev1.Secret {
-	return &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "apicastconf-" + suffix,
-			Namespace: r.Namespace,
-		},
-		StringData: map[string]string{
-			"config.json": fmt.Sprintf(`{
-				"services": [
-				  {
-					"id": "1",
-					"backend_version": "1",
-					"proxy": {
-					  "hosts": ["insights-proxy-%s","insights-proxy-%s.%s.svc"],
-					  "api_backend": "https://insights.example.com:443/",
-					  "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
-					  "policy_chain": [
-						{
-						  "name": "default_credentials",
-						  "version": "builtin",
-						  "configuration": {
-							"auth_type": "user_key",
-							"user_key": "dummy_key"
-						  }
-						},
-						{
-						  "name": "headers",
-						  "version": "builtin",
-						  "configuration": {
-							"request": [
-							  {
-								"op": "set",
-								"header": "Authorization",
-								"value_type": "plain",
-								"value": "Bearer world"
-							  },
-							  {
-								"op": "set",
-								"header": "User-Agent",
-								"value_type": "plain",
-								"value": "%s cluster/abcde"
-							  }
-							]
-						  }
-						},
-						{
-						  "name": "apicast.policy.apicast"
-						}
-					  ],
-					  "proxy_rules": [
-						{
-						  "http_method": "POST",
-						  "pattern": "/",
-						  "metric_system_name": "hits",
-						  "delta": 1,
-						  "parameters": [],
-						  "querystring_parameters": {}
-						}
-					  ]
-					}
-				  }
-				]
-			  }`, suffix, suffix, r.Namespace, r.UserAgentPrefix),
-		},
-	}
-}
+const apiCastConf = `{
+  "services": [
+    {
+      "id": "1",
+      "backend_version": "1",
+      "proxy": {
+        "hosts": ["insights-proxy-%s","insights-proxy-%s.%s.svc"],
+        "api_backend": "https://insights.example.com:443/",
+        "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
+        "policy_chain": [
+          {
+            "name": "default_credentials",
+            "version": "builtin",
+            "configuration": {
+              "auth_type": "user_key",
+              "user_key": "dummy_key"
+            }
+          },
+          {
+            "name": "headers",
+            "version": "builtin",
+            "configuration": {
+              "request": [
+                {
+                  "op": "set",
+                  "header": "Authorization",
+                  "value_type": "plain",
+                  "value": "Bearer world"
+                },
+                {
+                  "op": "set",
+                  "header": "User-Agent",
+                  "value_type": "plain",
+                  "value": "%s cluster/abcde"
+                }
+              ]
+            }
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "POST",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    }
+  ]
+}`
 
-func (r *InsightsTestResources) NewInsightsProxySecretWithProxyDomain() *corev1.Secret {
+const apiCastProxyConf = `{
+  "services": [
+    {
+      "id": "1",
+      "backend_version": "1",
+      "proxy": {
+        "hosts": ["insights-proxy-%s","insights-proxy-%s.%s.svc"],
+        "api_backend": "https://insights.example.com:443/",
+        "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
+        "policy_chain": [
+          {
+            "name": "default_credentials",
+            "version": "builtin",
+            "configuration": {
+              "auth_type": "user_key",
+              "user_key": "dummy_key"
+            }
+          },
+          {
+            "name": "apicast.policy.http_proxy",
+            "configuration": {
+              "https_proxy": "http://proxy.example.com/",
+              "http_proxy": "http://proxy.example.com/"
+            }
+          },
+          {
+            "name": "headers",
+            "version": "builtin",
+            "configuration": {
+              "request": [
+                {
+                  "op": "set",
+                  "header": "Authorization",
+                  "value_type": "plain",
+                  "value": "Bearer world"
+                },
+                {
+                  "op": "set",
+                  "header": "User-Agent",
+                  "value_type": "plain",
+                  "value": "%s cluster/abcde"
+                }
+              ]
+            }
+          },
+          {
+            "name": "apicast.policy.apicast"
+          }
+        ],
+        "proxy_rules": [
+          {
+            "http_method": "POST",
+            "pattern": "/",
+            "metric_system_name": "hits",
+            "delta": 1,
+            "parameters": [],
+            "querystring_parameters": {}
+          }
+        ]
+      }
+    }
+  ]
+}`
+
+func (r *InsightsTestResources) NewInsightsProxySecret() *corev1.Secret {
+	conf := apiCastConf
+	if r.WithProxy {
+		conf = apiCastProxyConf
+	}
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "apicastconf-" + suffix,
 			Namespace: r.Namespace,
 		},
-		StringData: map[string]string{
-			"config.json": fmt.Sprintf(`{
-				"services": [
-				  {
-					"id": "1",
-					"backend_version": "1",
-					"proxy": {
-					  "hosts": ["insights-proxy-%s","insights-proxy-%s.%s.svc"],
-					  "api_backend": "https://insights.example.com:443/",
-					  "backend": { "endpoint": "http://127.0.0.1:8081", "host": "backend" },
-					  "policy_chain": [
-						{
-						  "name": "default_credentials",
-						  "version": "builtin",
-						  "configuration": {
-							"auth_type": "user_key",
-							"user_key": "dummy_key"
-						  }
-						},
-						{
-						  "name": "apicast.policy.http_proxy",
-						  "configuration": {
-						    "https_proxy": "http://proxy.example.com/",
-						    "http_proxy": "http://proxy.example.com/"
-						  }
-						},
-						{
-						  "name": "headers",
-						  "version": "builtin",
-						  "configuration": {
-							"request": [
-							  {
-								"op": "set",
-								"header": "Authorization",
-								"value_type": "plain",
-								"value": "Bearer world"
-							  },
-							  {
-								"op": "set",
-								"header": "User-Agent",
-								"value_type": "plain",
-								"value": "%s cluster/abcde"
-							  }
-							]
-						  }
-						},
-						{
-						  "name": "apicast.policy.apicast"
-						}
-					  ],
-					  "proxy_rules": [
-						{
-						  "http_method": "POST",
-						  "pattern": "/",
-						  "metric_system_name": "hits",
-						  "delta": 1,
-						  "parameters": [],
-						  "querystring_parameters": {}
-						}
-					  ]
-					}
-				  }
-				]
-			  }`, suffix, suffix, r.Namespace, r.UserAgentPrefix),
+		Data: map[string][]byte{
+			"config.json": []byte(fmt.Sprintf(conf, suffix, suffix, r.Namespace, r.UserAgentPrefix)),
 		},
 	}
 }
 
 func (r *InsightsTestResources) NewInsightsProxyDeployment() *appsv1.Deployment {
 	var resources *corev1.ResourceRequirements
+
+	// Build the secret-hash annotation
+	buf, err := json.Marshal(r.NewInsightsProxySecret().Data)
+	gomega.Expect(err).ToNot(gomega.HaveOccurred())
+	hash := fmt.Sprintf("%x", sha256.Sum256(buf))
+
 	if r.Resources != nil {
 		resources = r.Resources
 	} else {
@@ -270,6 +276,9 @@ func (r *InsightsTestResources) NewInsightsProxyDeployment() *appsv1.Deployment 
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
 						"app": "insights-proxy-" + suffix,
+					},
+					Annotations: map[string]string{
+						"com.redhat.insights.runtimes/secret-hash": hash,
 					},
 				},
 				Spec: corev1.PodSpec{
