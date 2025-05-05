@@ -29,7 +29,8 @@ spec:
     value: .
   pipelineRef:
     name: build-pipeline
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-runtimes-inventory-operator
   workspaces:
   - name: git-auth
     secret:
