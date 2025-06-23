@@ -50,7 +50,7 @@ const (
 	agentPath                = "/tmp/rh-runtimes-insights/runtimes-agent.jar"
 	podNameEnvVar            = "RHT_INSIGHTS_JAVA_AGENT_POD_NAME"
 	podNamespaceEnvVar       = "RHT_INSIGHTS_JAVA_AGENT_POD_NAMESPACE"
-	defaultAgentInitImageTag = "quay.io/ebaron/runtimes-agent-init:latest" // FIXME
+	defaultAgentInitImageTag = "registry.redhat.io/insights-runtimes-tech-preview/runtimes-agent-init-rhel9:latest"
 	agentMaxSizeBytes        = "50Mi"
 	agentInitCpuRequest      = "10m"
 	agentInitMemoryRequest   = "32Mi"
