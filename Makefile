@@ -310,3 +310,16 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+# cert-manager helpers for development
+CERT_MANAGER_VERSION ?= 1.12.14
+CERT_MANAGER_MANIFEST ?= \
+	https://github.com/cert-manager/cert-manager/releases/download/v$(CERT_MANAGER_VERSION)/cert-manager.yaml
+
+.PHONY: cert_manager
+cert_manager: remove_cert_manager ## Install cert manager.
+	$(KUBECTL) create --validate=false -f $(CERT_MANAGER_MANIFEST)
+
+.PHONY: remove_cert_manager
+remove_cert_manager: ## Remove cert manager.
+	- $(KUBECTL) delete --ignore-not-found=true -f $(CERT_MANAGER_MANIFEST)

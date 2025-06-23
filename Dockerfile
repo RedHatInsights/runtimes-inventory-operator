@@ -16,6 +16,7 @@ COPY cmd/main.go cmd/main.go
 # COPY api/ api/
 COPY internal/controller/ internal/controller/
 COPY internal/common/ internal/common/
+COPY internal/webhooks/ internal/webhooks/
 COPY pkg/ pkg/
 
 # Build

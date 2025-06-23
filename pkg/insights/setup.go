@@ -178,7 +178,7 @@ func (i *InsightsIntegration) deleteConfigMap(ctx context.Context) error {
 func (i *InsightsIntegration) getProxyURL() *url.URL {
 	return &url.URL{
 		Scheme: "http", // TODO add https support
-		Host: fmt.Sprintf("%s.%s.svc.cluster.local:%d", common.ProxyServiceName(i.opName), i.opNamespace,
+		Host: fmt.Sprintf("%s.%s.svc:%d", common.ProxyServiceName(i.opName), i.opNamespace,
 			common.ProxyServicePort),
 	}
 }

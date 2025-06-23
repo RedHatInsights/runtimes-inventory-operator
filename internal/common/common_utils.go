@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"hash/fnv"
 	"os"
+	"regexp"
 	"slices"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +34,7 @@ import (
 // OSUtils is an abstraction on functionality that interacts with the operating system
 type OSUtils interface {
 	GetEnv(name string) string
+	GetEnvOrDefault(name string, defaultVal string) string
 }
 
 type DefaultOSUtils struct{}
@@ -40,6 +43,16 @@ type DefaultOSUtils struct{}
 // variable exists, the empty string is returned.
 func (o *DefaultOSUtils) GetEnv(name string) string {
 	return os.Getenv(name)
+}
+
+// GetEnvOrDefault returns the value of the environment variable with the provided name.
+// If no such variable exists, the provided default value is returned.
+func (o *DefaultOSUtils) GetEnvOrDefault(name string, defaultVal string) string {
+	val := o.GetEnv(name)
+	if len(val) > 0 {
+		return val
+	}
+	return defaultVal
 }
 
 // MergeLabelsAndAnnotations copies labels and annotations from a source
@@ -69,6 +82,46 @@ func NamespaceUniqueName(name string, suffixToHash string) string {
 	hash := fnv.New128()
 	hash.Write([]byte(suffixToHash))
 	return fmt.Sprintf("%s-%x", name, hash.Sum([]byte{}))
+}
+
+// Matches image tags of the form "major.minor.patch"
+var develVerRegexp = regexp.MustCompile(`(?i)(:latest|SNAPSHOT|dev|BETA\d+)$`)
+
+// GetPullPolicy returns an image pull policy based on the image tag provided.
+func GetPullPolicy(imageTag string) corev1.PullPolicy {
+	// Use Always for tags that have a known development suffix
+	if develVerRegexp.MatchString(imageTag) {
+		return corev1.PullAlways
+	}
+	// Likely a release, use IfNotPresent
+	return corev1.PullIfNotPresent
+}
+
+// PopulateResourceRequest configures ResourceRequirements, applying defaults and checking that
+// requests are not larger than limits
+func PopulateResourceRequest(resources *corev1.ResourceRequirements, defaultCpu, defaultMemory string) {
+	if resources.Requests == nil {
+		resources.Requests = corev1.ResourceList{}
+	}
+	requests := resources.Requests
+	if _, found := requests[corev1.ResourceCPU]; !found {
+		requests[corev1.ResourceCPU] = resource.MustParse(defaultCpu)
+	}
+	if _, found := requests[corev1.ResourceMemory]; !found {
+		requests[corev1.ResourceMemory] = resource.MustParse(defaultMemory)
+	}
+	checkResourceRequestWithLimit(requests, resources.Limits)
+}
+
+func checkResourceRequestWithLimit(requests, limits corev1.ResourceList) {
+	if limits != nil {
+		if limitCpu, found := limits[corev1.ResourceCPU]; found && limitCpu.Cmp(*requests.Cpu()) < 0 {
+			requests[corev1.ResourceCPU] = limitCpu.DeepCopy()
+		}
+		if limitMemory, found := limits[corev1.ResourceMemory]; found && limitMemory.Cmp(*requests.Memory()) < 0 {
+			requests[corev1.ResourceMemory] = limitMemory.DeepCopy()
+		}
+	}
 }
 
 const annotationSecretHash = "com.redhat.insights.runtimes/secret-hash"

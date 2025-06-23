@@ -24,6 +24,7 @@ type TestUtilsConfig struct {
 	EnvInsightsProxyImageTag *string
 	EnvInsightsBackendDomain *string
 	EnvInsightsProxyDomain   *string
+	EnvAgentInitImageTag     *string
 }
 
 type testOSUtils struct {
@@ -44,6 +45,9 @@ func NewTestOSUtils(config *TestUtilsConfig) *testOSUtils {
 	if config.EnvInsightsProxyDomain != nil {
 		envs["INSIGHTS_PROXY_DOMAIN"] = *config.EnvInsightsProxyDomain
 	}
+	if config.EnvAgentInitImageTag != nil {
+		envs["RELATED_IMAGE_AGENT_INIT"] = *config.EnvAgentInitImageTag
+	}
 	return &testOSUtils{envs: envs}
 }
 
@@ -54,6 +58,14 @@ func (o *testOSUtils) GetFileContents(path string) ([]byte, error) {
 
 func (o *testOSUtils) GetEnv(name string) string {
 	return o.envs[name]
+}
+
+func (o *testOSUtils) GetEnvOrDefault(name string, defaultVal string) string {
+	val, pres := o.envs[name]
+	if pres {
+		return val
+	}
+	return defaultVal
 }
 
 func (o *testOSUtils) GenPasswd(length int) string {

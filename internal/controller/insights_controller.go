@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// InsightsReconciler reconciles the Insights proxy for Cryostat agents
+// InsightsReconciler reconciles the Insights proxy for Runtimes agents
 type InsightsReconciler struct {
 	*InsightsReconcilerConfig
 	backendDomain string
