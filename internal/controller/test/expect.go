@@ -15,8 +15,6 @@
 package test
 
 import (
-	"fmt"
-
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -28,13 +26,14 @@ func ExpectResourceRequirements(containerResource, expectedResource *corev1.Reso
 	requestCpu, requestCpuFound := containerResource.Requests[corev1.ResourceCPU]
 	expectedRequestCpu := expectedResource.Requests[corev1.ResourceCPU]
 	gomega.Expect(requestCpuFound).To(gomega.BeTrue())
-	fmt.Printf("%+v\n%+v\n", containerResource.Requests, expectedResource.Requests)
-	gomega.Expect(requestCpu.Equal(expectedRequestCpu)).To(gomega.BeTrue())
+	gomega.Expect(requestCpu.Equal(expectedRequestCpu)).To(gomega.BeTrue(),
+		"expected CPU requests %s to equal %s", requestCpu.String(), expectedRequestCpu.String())
 
 	requestMemory, requestMemoryFound := containerResource.Requests[corev1.ResourceMemory]
 	expectedRequestMemory := expectedResource.Requests[corev1.ResourceMemory]
 	gomega.Expect(requestMemoryFound).To(gomega.BeTrue())
-	gomega.Expect(requestMemory.Equal(expectedRequestMemory)).To(gomega.BeTrue())
+	gomega.Expect(requestMemory.Equal(expectedRequestMemory)).To(gomega.BeTrue(),
+		"expected memory requests %s to equal %s", requestMemory.String(), expectedRequestMemory.String())
 
 	if expectedResource.Limits == nil {
 		gomega.Expect(containerResource.Limits).To(gomega.BeNil())
@@ -46,7 +45,8 @@ func ExpectResourceRequirements(containerResource, expectedResource *corev1.Reso
 
 		gomega.Expect(limitCpuFound).To(gomega.Equal(expectedLimitCpuFound))
 		if expectedLimitCpuFound {
-			gomega.Expect(limitCpu.Equal(expectedLimitCpu)).To(gomega.BeTrue())
+			gomega.Expect(limitCpu.Equal(expectedLimitCpu)).To(gomega.BeTrue(),
+				"expected CPU limit %s to equal %s", limitCpu.String(), expectedLimitCpu.String())
 		}
 
 		limitMemory, limitMemoryFound := containerResource.Limits[corev1.ResourceMemory]
@@ -54,7 +54,8 @@ func ExpectResourceRequirements(containerResource, expectedResource *corev1.Reso
 
 		gomega.Expect(limitMemoryFound).To(gomega.Equal(expectedLimitMemoryFound))
 		if expectedLimitCpuFound {
-			gomega.Expect(limitMemory.Equal(expectedlimitMemory)).To(gomega.BeTrue())
+			gomega.Expect(limitMemory.Equal(expectedlimitMemory)).To(gomega.BeTrue(),
+				"expected memory limit %s to equal %s", limitMemory.String(), expectedlimitMemory.String())
 		}
 	}
 }

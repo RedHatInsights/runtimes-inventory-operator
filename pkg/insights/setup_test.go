@@ -105,7 +105,7 @@ var _ = Describe("InsightsIntegration", func() {
 				result, err := t.integration.Setup()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
-				Expect(result.String()).To(Equal(fmt.Sprintf("http://%s.%s.svc.cluster.local:8080", t.NewInsightsProxyService().Name, t.Namespace)))
+				Expect(result.String()).To(Equal(fmt.Sprintf("http://%s.%s.svc:8080", t.NewInsightsProxyService().Name, t.Namespace)))
 			})
 
 			It("should create config map", func() {

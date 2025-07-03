@@ -21,6 +21,7 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/webhooks"
 	"github.com/RedHatInsights/runtimes-inventory-operator/pkg/insights"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -180,8 +181,14 @@ func main() {
 		setupLog.Error(err, "failed to set up Insights integration")
 	} else {
 		setupLog.Info("Insights proxy set up", "url", insightsURL.String())
+		agentWebhook := webhooks.NewAgentWebhook(&webhooks.AgentWebhookConfig{
+			InsightsURL: insightsURL,
+		})
+		if err = agentWebhook.SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+			os.Exit(1)
+		}
 	}
-
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
