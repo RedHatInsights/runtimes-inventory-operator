@@ -48,8 +48,12 @@ const (
 
 	javaAgentParam           = "-javaagent"
 	agentPath                = "/tmp/rh-runtimes-insights/runtimes-agent.jar"
+	identNameEnvVar          = "RHT_INSIGHTS_JAVA_IDENTIFICATION_NAME"
+	tokenEnvVar              = "RHT_INSIGHTS_JAVA_AUTH_TOKEN"
+	uploadURLEnvVar          = "RHT_INSIGHTS_JAVA_UPLOAD_BASE_URL"
 	podNameEnvVar            = "RHT_INSIGHTS_JAVA_AGENT_POD_NAME"
 	podNamespaceEnvVar       = "RHT_INSIGHTS_JAVA_AGENT_POD_NAMESPACE"
+	debugEnvVar              = "RHT_INSIGHTS_JAVA_AGENT_DEBUG"
 	defaultAgentInitImageTag = "registry.redhat.io/insights-runtimes-tech-preview/runtimes-agent-init-rhel9:latest"
 	agentMaxSizeBytes        = "50Mi"
 	agentInitCpuRequest      = "10m"
@@ -130,9 +134,25 @@ func (r *podMutator) Default(ctx context.Context, obj runtime.Object) error {
 		ReadOnly:  true,
 	})
 
-	// Prepend these to the environment variable list so they can be
-	// referenced by a possibly existing java options variable
-	prependEnvs := []corev1.EnvVar{
+	// Set agent configuration using environment variables to avoid
+	// shell escape issues with argument separators
+	envs := []corev1.EnvVar{
+		{
+			Name: identNameEnvVar,
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		{
+			Name:  tokenEnvVar,
+			Value: "unused",
+		},
+		{
+			Name:  uploadURLEnvVar,
+			Value: r.config.InsightsURL.String(),
+		},
 		{
 			Name: podNameEnvVar,
 			ValueFrom: &corev1.EnvVarSource{
@@ -150,11 +170,17 @@ func (r *podMutator) Default(ctx context.Context, obj runtime.Object) error {
 			},
 		},
 	}
-	container.Env = append(prependEnvs, container.Env...)
+	if isOptionEnabled(pod.Labels, agentLabelLogDebug) {
+		envs = append(envs, corev1.EnvVar{
+			Name:  debugEnvVar,
+			Value: "true",
+		})
+	}
+
+	container.Env = append(container.Env, envs...)
 
 	// Inject agent using JAVA_TOOL_OPTIONS or specified variable, appending to any existing value
-	extended, err := r.extendJavaOptsVar(container.Env, getJavaOptionsVar(pod.Labels),
-		isOptionEnabled(pod.Labels, agentLabelLogDebug))
+	extended, err := r.extendJavaOptsVar(container.Env, getJavaOptionsVar(pod.Labels))
 	if err != nil {
 		return err
 	}
@@ -212,25 +238,13 @@ func getJavaOptionsVar(labels map[string]string) string {
 	return result
 }
 
-func (r *podMutator) extendJavaOptsVar(envs []corev1.EnvVar, javaOptsVar string, debugLogging bool) ([]corev1.EnvVar, error) {
+func (r *podMutator) extendJavaOptsVar(envs []corev1.EnvVar, javaOptsVar string) ([]corev1.EnvVar, error) {
 	existing, err := findJavaOptsVar(envs, javaOptsVar)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build agent config
-	config := []string{
-		newAgentArg("name", fmt.Sprintf("$(%s)", podNameEnvVar)),
-		newAgentArg("base_url", r.config.InsightsURL.String()),
-		newAgentArg("pod_name", fmt.Sprintf("$(%s)", podNameEnvVar)),
-		newAgentArg("pod_namespace", fmt.Sprintf("$(%s)", podNamespaceEnvVar)),
-		newAgentArg("token", "unused"),
-	}
-	// Add debug logging if specified
-	if debugLogging {
-		config = append(config, newAgentArg("debug", "true"))
-	}
-	agentArgLine := fmt.Sprintf("%s:'%s=%s'", javaAgentParam, agentPath, strings.Join(config, ";"))
+	agentArgLine := fmt.Sprintf("%s:%s", javaAgentParam, agentPath)
 	if existing != nil {
 		existing.Value += " " + agentArgLine
 	} else {
