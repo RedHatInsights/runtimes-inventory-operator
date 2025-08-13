@@ -318,13 +318,24 @@ func newMutatedMultiContainersLabel(r *AgentWebhookTestResources, options *mutat
 
 func (r *AgentWebhookTestResources) newMutatedContainer(original *corev1.Container, options *mutatedPodOptions) *corev1.Container {
 	svc := r.NewInsightsProxyService()
-	debugLogging := ""
-	if options.debugLog {
-		debugLogging = ";debug=true"
-	}
-	agentArgLine := fmt.Sprintf("-javaagent:'/tmp/rh-runtimes-insights/runtimes-agent.jar=name=$(RHT_INSIGHTS_JAVA_AGENT_POD_NAME);base_url=http://%s.%s.svc:8080;pod_name=$(RHT_INSIGHTS_JAVA_AGENT_POD_NAME);pod_namespace=$(RHT_INSIGHTS_JAVA_AGENT_POD_NAMESPACE);token=unused%s'",
-		svc.Name, svc.Namespace, debugLogging)
-	prependEnv := append([]corev1.EnvVar{
+	envs := []corev1.EnvVar{
+		{
+			Name: "RHT_INSIGHTS_JAVA_IDENTIFICATION_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					APIVersion: "v1",
+					FieldPath:  "metadata.name",
+				},
+			},
+		},
+		{
+			Name:  "RHT_INSIGHTS_JAVA_AUTH_TOKEN",
+			Value: "unused",
+		},
+		{
+			Name:  "RHT_INSIGHTS_JAVA_UPLOAD_BASE_URL",
+			Value: fmt.Sprintf("http://%s.%s.svc:8080", svc.Name, svc.Namespace),
+		},
 		{
 			Name: "RHT_INSIGHTS_JAVA_AGENT_POD_NAME",
 			ValueFrom: &corev1.EnvVarSource{
@@ -343,14 +354,21 @@ func (r *AgentWebhookTestResources) newMutatedContainer(original *corev1.Contain
 				},
 			},
 		},
-	}, original.Env...)
+		{
+			Name:  options.javaOptionsName,
+			Value: options.javaOptionsValue + "-javaagent:/tmp/rh-runtimes-insights/runtimes-agent.jar",
+		},
+	}
+	if options.debugLog {
+		envs = append(envs, corev1.EnvVar{
+			Name:  "RHT_INSIGHTS_JAVA_AGENT_DEBUG",
+			Value: "true",
+		})
+	}
 	container := &corev1.Container{
 		Name:  original.Name,
 		Image: original.Image,
-		Env: append(prependEnv, corev1.EnvVar{
-			Name:  options.javaOptionsName,
-			Value: options.javaOptionsValue + agentArgLine,
-		}),
+		Env:   append(original.Env, envs...),
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: &[]bool{false}[0],
 			Capabilities: &corev1.Capabilities{
