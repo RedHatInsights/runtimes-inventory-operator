@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    createdAt: "2025-07-08T21:30:33Z"
+    createdAt: "2025-08-13T20:56:09Z"
     operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   labels:
@@ -103,7 +103,7 @@ spec:
                 - name: RELATED_IMAGE_INSIGHTS_PROXY
                   value: registry.redhat.io/3scale-amp2/apicast-gateway-rhel8:3scale2.15
                 - name: USER_AGENT_PREFIX
-                  value: cryostat-operator/0.0.0
+                  value: runtimes-inventory-operator/0.0.0
                 image: controller:latest
                 livenessProbe:
                   httpGet:
@@ -140,6 +140,8 @@ spec:
                   readOnly: true
               securityContext:
                 runAsNonRoot: true
+                seccompProfile:
+                  type: RuntimeDefault
               serviceAccountName: runtimes-inventory-operator-controller-manager
               terminationGracePeriodSeconds: 10
               volumes:
