@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    createdAt: "2025-08-13T20:56:09Z"
+    createdAt: "2025-09-05T20:05:51Z"
     operators.operatorframework.io/builder: operator-sdk-v1.39.2
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v4
   labels:
@@ -13,7 +13,7 @@ metadata:
     operatorframework.io/arch.ppc64le: supported
     operatorframework.io/arch.s390x: supported
     operatorframework.io/os.linux: supported
-  name: runtimes-inventory-operator.v0.0.1-dev
+  name: runtimes-inventory-operator.v1.0.0-dev
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -99,11 +99,11 @@ spec:
                 - name: INSIGHTS_BACKEND_DOMAIN
                   value: console.redhat.com
                 - name: RELATED_IMAGE_AGENT_INIT
-                  value: registry.redhat.io/insights-runtimes-tech-preview/runtimes-agent-init-rhel9:latest
+                  value: registry.redhat.io/insights-runtimes/runtimes-agent-init-rhel9:latest
                 - name: RELATED_IMAGE_INSIGHTS_PROXY
                   value: registry.redhat.io/3scale-amp2/apicast-gateway-rhel8:3scale2.15
                 - name: USER_AGENT_PREFIX
-                  value: runtimes-inventory-operator/0.0.0
+                  value: runtimes-inventory-operator/1.0.0
                 image: controller:latest
                 livenessProbe:
                   httpGet:
@@ -244,11 +244,11 @@ spec:
     name: Red Hat
     url: https://www.redhat.com
   relatedImages:
-  - image: registry.redhat.io/insights-runtimes-tech-preview/runtimes-agent-init-rhel9:latest
+  - image: registry.redhat.io/insights-runtimes/runtimes-agent-init-rhel9:latest
     name: agent-init
   - image: registry.redhat.io/3scale-amp2/apicast-gateway-rhel8:3scale2.15
     name: insights-proxy
-  version: 0.0.1-dev
+  version: 1.0.0-dev
   webhookdefinitions:
   - admissionReviewVersions:
     - v1
