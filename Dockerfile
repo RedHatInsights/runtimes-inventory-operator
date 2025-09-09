@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM registry.access.redhat.com/ubi8/go-toolset:latest as builder
+FROM registry.access.redhat.com/ubi9/go-toolset:latest as builder
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -28,20 +28,7 @@ RUN GOEXPERIMENT=strictfipsruntime \
     GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
     go build -a -o /opt/app-root/manager -tags strictfipsruntime cmd/main.go
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest
-
-LABEL com.redhat.component="runtimes-inventory-rhel8-operator-container"
-LABEL name="insights-runtimes-tech-preview/runtimes-inventory-rhel8-operator"
-LABEL maintainer="Red Hat Insights for Runtimes"
-LABEL summary="Operator support for Runtimes Inventory"
-LABEL description="A reusable component for Red Hat operators managing Java workloads. \
-This component allows these operators to more easily integrate their workloads into \
-the Red Hat Insights Runtimes Inventory."
-LABEL io.k8s.description="A reusable component for Red Hat operators managing Java workloads. \
-This component allows these operators to more easily integrate their workloads into \
-the Red Hat Insights Runtimes Inventory."
-LABEL io.k8s.display-name="Runtimes Inventory Operator"
-LABEL io.openshift.tags="insights,java,openshift"
+FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
 
 COPY --from=builder /opt/app-root/manager .
 

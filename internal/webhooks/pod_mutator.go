@@ -54,7 +54,7 @@ const (
 	podNameEnvVar            = "RHT_INSIGHTS_JAVA_AGENT_POD_NAME"
 	podNamespaceEnvVar       = "RHT_INSIGHTS_JAVA_AGENT_POD_NAMESPACE"
 	debugEnvVar              = "RHT_INSIGHTS_JAVA_AGENT_DEBUG"
-	defaultAgentInitImageTag = "registry.redhat.io/insights-runtimes-tech-preview/runtimes-agent-init-rhel9:latest"
+	defaultAgentInitImageTag = "registry.redhat.io/insights-runtimes/runtimes-agent-init-rhel9:latest"
 	agentMaxSizeBytes        = "50Mi"
 	agentInitCpuRequest      = "10m"
 	agentInitMemoryRequest   = "32Mi"

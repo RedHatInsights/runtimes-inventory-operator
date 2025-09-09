@@ -177,7 +177,7 @@ func (r *AgentWebhookTestResources) setDefaultMutatedPodOptions(options *mutated
 		options.namespace = r.Namespace
 	}
 	if len(options.image) == 0 {
-		options.image = "registry.redhat.io/insights-runtimes-tech-preview/runtimes-agent-init-rhel9:latest"
+		options.image = "registry.redhat.io/insights-runtimes/runtimes-agent-init-rhel9:latest"
 	}
 	if len(options.pullPolicy) == 0 {
 		options.pullPolicy = corev1.PullAlways
