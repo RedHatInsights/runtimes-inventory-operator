@@ -81,7 +81,7 @@ var apiCastConfigTemplate = template.Must(template.New("").Parse(`{
         "proxy_rules": [
           {
             "http_method": "POST",
-            "pattern": "/",
+            "pattern": "/api/ingress/v1/upload",
             "metric_system_name": "hits",
             "delta": 1,
             "parameters": [],
