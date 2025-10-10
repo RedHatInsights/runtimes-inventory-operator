@@ -16,12 +16,14 @@ package insights
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/RedHatInsights/runtimes-inventory-operator/internal/common"
 	"github.com/RedHatInsights/runtimes-inventory-operator/internal/controller"
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/webhooks"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,49 +62,79 @@ func NewInsightsIntegration(mgr ctrl.Manager, operatorName string, operatorNames
 	}
 }
 
+var (
+	ErrNoOperatorNamespace error = errors.New("operator namespace not detected")
+	ErrNoOperatorName      error = errors.New("operator name not detected")
+	ErrNoUserAgent         error = errors.New("user agent prefix not detected")
+	ErrInsightsDisabled    error = errors.New("no Insights URL is available")
+)
+
 // Setup adds a controller to your manager, which creates and
 // manages the HTTP proxy container that workloads may use
 // to send reports to Red Hat Insights.
-func (i *InsightsIntegration) Setup() (*url.URL, error) {
-	var proxyUrl *url.URL
-	// This will happen when running the operator locally
-	if len(i.opNamespace) == 0 { // TODO return error instead?
-		i.Log.Info("Operator namespace not detected")
-		return nil, nil
+func (i *InsightsIntegration) Setup() error {
+	if !i.isInsightsEnabled() {
+		err := i.destroy()
+		if err != nil {
+			i.Log.Error(err, "failed to clean up Insights integration")
+			return err
+		}
+		i.Log.Info("Insights integration is disabled")
+		return err
+	}
+
+	// This will happen when attempting to run the operator locally
+	if len(i.opNamespace) == 0 {
+		return ErrNoOperatorNamespace
 	}
 	if len(i.opName) == 0 {
-		i.Log.Info("Operator name not detected")
-		return nil, nil
+		return ErrNoOperatorName
 	}
 	if len(i.userAgentPrefix) == 0 {
-		i.Log.Info("User Agent prefix not detected")
-		return nil, nil
+		return ErrNoUserAgent
 	}
 
+	// Create the controller and add it to the manager
 	ctx := context.Background()
-	if i.isInsightsEnabled() {
-		err := i.createInsightsController()
-		if err != nil {
-			i.Log.Error(err, "unable to add controller to manager", "controller", "Insights")
-			return nil, err
-		}
-		// Create a Config Map to be used as a parent of all Insights Proxy related objects
-		err = i.createConfigMap(ctx)
-		if err != nil {
-			i.Log.Error(err, "failed to create config map for Insights")
-			return nil, err
-		}
-		proxyUrl = i.getProxyURL()
-	} else {
-		// Delete any previously created Config Map (and its children)
-		err := i.deleteConfigMap(ctx)
-		if err != nil {
-			i.Log.Error(err, "failed to delete config map for Insights")
-			return nil, err
-		}
-
+	err := i.createInsightsController()
+	if err != nil {
+		i.Log.Error(err, "unable to add controller to manager", "controller", "Insights")
+		return err
 	}
-	return proxyUrl, nil
+	// Create a Config Map to be used as a parent of all Insights Proxy related objects
+	err = i.createConfigMap(ctx)
+	if err != nil {
+		i.Log.Error(err, "failed to create config map for Insights")
+		return err
+	}
+
+	// Compute the URL to the proxy server service
+	insightsURL, err := i.GetProxyURL()
+	if err != nil {
+		return err
+	}
+
+	// Create the mutating webhook for injecting the agent
+	err = i.createInsightsWebhook(insightsURL)
+	if err != nil {
+		i.Log.Error(err, "unable to create webhook", "webhook", "Pod")
+		return err
+	}
+
+	i.Log.Info("Insights proxy set up", "url", insightsURL.String())
+	return nil
+}
+
+// destroy cleans up any existing proxy and any related objects
+// it uses.
+func (i *InsightsIntegration) destroy() error {
+	// Delete any previously created Config Map (and its children)
+	err := i.deleteConfigMap(context.Background())
+	if err != nil {
+		i.Log.Error(err, "failed to delete config map for Insights")
+		return err
+	}
+	return nil
 }
 
 func (i *InsightsIntegration) isInsightsEnabled() bool {
@@ -124,6 +156,16 @@ func (i *InsightsIntegration) createInsightsController() error {
 		return err
 	}
 	if err := controller.SetupWithManager(i.Manager); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (i *InsightsIntegration) createInsightsWebhook(insightsURL *url.URL) error {
+	agentWebhook := webhooks.NewAgentWebhook(&webhooks.AgentWebhookConfig{
+		InsightsURL: insightsURL,
+	})
+	if err := agentWebhook.SetupWebhookWithManager(i.Manager); err != nil {
 		return err
 	}
 	return nil
@@ -175,10 +217,13 @@ func (i *InsightsIntegration) deleteConfigMap(ctx context.Context) error {
 	return client.IgnoreNotFound(err)
 }
 
-func (i *InsightsIntegration) getProxyURL() *url.URL {
+func (i *InsightsIntegration) GetProxyURL() (*url.URL, error) {
+	if !i.isInsightsEnabled() {
+		return nil, ErrInsightsDisabled
+	}
 	return &url.URL{
 		Scheme: "http", // TODO add https support
 		Host: fmt.Sprintf("%s.%s.svc:%d", common.ProxyServiceName(i.opName), i.opNamespace,
 			common.ProxyServicePort),
-	}
+	}, nil
 }

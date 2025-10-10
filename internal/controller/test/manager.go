@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 type FakeManager struct {
@@ -76,4 +77,8 @@ func (m *FakeManager) SetFields(interface{}) error {
 
 func (m *FakeManager) Add(manager.Runnable) error {
 	return nil
+}
+
+func (m *FakeManager) GetWebhookServer() webhook.Server {
+	return &webhook.DefaultServer{}
 }

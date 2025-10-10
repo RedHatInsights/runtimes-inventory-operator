@@ -38,6 +38,7 @@ import (
 type setupTestInput struct {
 	client      ctrlclient.Client
 	objs        []ctrlclient.Object
+	opName      string
 	opNamespace string
 	integration *insights.InsightsIntegration
 	*test.TestUtilsConfig
@@ -65,10 +66,14 @@ var _ = Describe("InsightsIntegration", func() {
 					UserAgentPrefix: "test-operator/0.0.0",
 				},
 			}
+
+			deploy := t.NewOperatorDeployment()
 			t.objs = []ctrlclient.Object{
 				t.NewNamespace(),
-				t.NewOperatorDeployment(),
+				deploy,
 			}
+
+			t.opName = deploy.Name
 			t.opNamespace = t.Namespace
 		})
 
@@ -84,8 +89,8 @@ var _ = Describe("InsightsIntegration", func() {
 			}
 
 			manager := test.NewFakeManager(t.client, s, &logger)
-			deploy := t.NewOperatorDeployment()
-			t.integration = insights.NewInsightsIntegration(manager, deploy.Name, t.opNamespace, t.UserAgentPrefix, &logger)
+
+			t.integration = insights.NewInsightsIntegration(manager, t.opName, t.opNamespace, t.UserAgentPrefix, &logger)
 			t.integration.OSUtils = test.NewTestOSUtils(t.TestUtilsConfig)
 		})
 
@@ -101,20 +106,22 @@ var _ = Describe("InsightsIntegration", func() {
 		})
 
 		Context("with defaults", func() {
+			JustBeforeEach(func() {
+				err := t.integration.Setup()
+				Expect(err).ToNot(HaveOccurred())
+			})
+
 			It("should return proxy URL", func() {
-				result, err := t.integration.Setup()
+				result, err := t.integration.GetProxyURL()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(result).ToNot(BeNil())
 				Expect(result.String()).To(Equal(fmt.Sprintf("http://%s.%s.svc:8080", t.NewInsightsProxyService().Name, t.Namespace)))
 			})
 
 			It("should create config map", func() {
-				_, err := t.integration.Setup()
-				Expect(err).ToNot(HaveOccurred())
-
 				expected := t.NewProxyConfigMap()
 				actual := &corev1.ConfigMap{}
-				err = t.client.Get(context.Background(), types.NamespacedName{
+				err := t.client.Get(context.Background(), types.NamespacedName{
 					Name:      expected.Name,
 					Namespace: expected.Namespace,
 				}, actual)
@@ -135,19 +142,21 @@ var _ = Describe("InsightsIntegration", func() {
 				)
 			})
 
-			It("should return nil", func() {
-				result, err := t.integration.Setup()
+			JustBeforeEach(func() {
+				err := t.integration.Setup()
 				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("should return an error for URL", func() {
+				result, err := t.integration.GetProxyURL()
+				Expect(err).To(Equal(insights.ErrInsightsDisabled))
 				Expect(result).To(BeNil())
 			})
 
 			It("should delete config map", func() {
-				_, err := t.integration.Setup()
-				Expect(err).ToNot(HaveOccurred())
-
 				expected := t.NewProxyConfigMap()
 				actual := &corev1.ConfigMap{}
-				err = t.client.Get(context.Background(), types.NamespacedName{
+				err := t.client.Get(context.Background(), types.NamespacedName{
 					Name:      expected.Name,
 					Namespace: expected.Namespace,
 				}, actual)
@@ -161,24 +170,43 @@ var _ = Describe("InsightsIntegration", func() {
 				t.opNamespace = ""
 			})
 
-			It("should return nil", func() {
-				result, err := t.integration.Setup()
-				Expect(err).ToNot(HaveOccurred())
-				Expect(result).To(BeNil())
+			It("should return an error", func() {
+				err := t.integration.Setup()
+				Expect(err).To(Equal(insights.ErrNoOperatorNamespace))
 			})
 
 			It("should not create config map", func() {
-				_, err := t.integration.Setup()
-				Expect(err).ToNot(HaveOccurred())
+				t.expectNoConfigMap()
+			})
+		})
 
-				expected := t.NewProxyConfigMap()
-				actual := &corev1.ConfigMap{}
-				err = t.client.Get(context.Background(), types.NamespacedName{
-					Name:      expected.Name,
-					Namespace: expected.Namespace,
-				}, actual)
-				Expect(err).To(HaveOccurred())
-				Expect(kerrors.IsNotFound(err)).To(BeTrue(), err.Error())
+		Context("with missing operator name", func() {
+			BeforeEach(func() {
+				t.opName = ""
+			})
+
+			It("should return an error", func() {
+				err := t.integration.Setup()
+				Expect(err).To(Equal(insights.ErrNoOperatorName))
+			})
+
+			It("should not create config map", func() {
+				t.expectNoConfigMap()
+			})
+		})
+
+		Context("with missing User-Agent prefix", func() {
+			BeforeEach(func() {
+				t.UserAgentPrefix = ""
+			})
+
+			It("should return an error", func() {
+				err := t.integration.Setup()
+				Expect(err).To(Equal(insights.ErrNoUserAgent))
+			})
+
+			It("should not create config map", func() {
+				t.expectNoConfigMap()
 			})
 		})
 	})
@@ -193,4 +221,18 @@ func (t *setupTestInput) getOperatorDeployment() *appsv1.Deployment {
 	}, deploy)
 	Expect(err).ToNot(HaveOccurred())
 	return deploy
+}
+
+func (t *setupTestInput) expectNoConfigMap() {
+	err := t.integration.Setup()
+	Expect(err).To(HaveOccurred())
+
+	expected := t.NewProxyConfigMap()
+	actual := &corev1.ConfigMap{}
+	err = t.client.Get(context.Background(), types.NamespacedName{
+		Name:      expected.Name,
+		Namespace: expected.Namespace,
+	}, actual)
+	Expect(err).To(HaveOccurred())
+	Expect(kerrors.IsNotFound(err)).To(BeTrue(), err.Error())
 }
