@@ -16,11 +16,13 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 
+	"github.com/RedHatInsights/runtimes-inventory-operator/internal/common"
 	"github.com/RedHatInsights/runtimes-inventory-operator/pkg/insights"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -149,13 +151,20 @@ func main() {
 			},
 		}
 	}
+
+	// Default to the Operator SDK-generated ID
+	leaderElectionID := "f6f162e7.redhat.com"
+	if len(operatorName) > 0 {
+		leaderElectionID = fmt.Sprintf("%s.redhat.com", common.FastHash(operatorName))
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
 		WebhookServer:          webhookServer,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "f6f162e7.redhat.com",
+		LeaderElectionID:       leaderElectionID,
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly

@@ -78,10 +78,15 @@ func MergeLabelsAndAnnotations(dest *metav1.ObjectMeta, srcLabels, srcAnnotation
 
 // NamespaceUniqueName appends a hash of the provided suffix to the name.
 func NamespaceUniqueName(name string, suffixToHash string) string {
+	return fmt.Sprintf("%s-%s", name, FastHash(suffixToHash))
+}
+
+// FashHash returns a non-cryptographic hash of the provided string
+func FastHash(toHash string) string {
 	// Use the 128-bit FNV-1 checksum of the suffix.
 	hash := fnv.New128()
-	hash.Write([]byte(suffixToHash))
-	return fmt.Sprintf("%s-%x", name, hash.Sum([]byte{}))
+	hash.Write([]byte(toHash))
+	return fmt.Sprintf("%x", hash.Sum([]byte{}))
 }
 
 // Matches image tags of the form "major.minor.patch"
