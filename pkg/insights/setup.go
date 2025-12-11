@@ -43,6 +43,7 @@ type InsightsIntegration struct {
 	opName          string
 	opNamespace     string
 	userAgentPrefix string
+	enableWebhook   bool
 	common.OSUtils
 }
 
@@ -51,13 +52,15 @@ type InsightsIntegration struct {
 // Provide the operator's name and namespace,
 // which can be discovered using the Kubernetes downward API.
 // The User Agent prefix must be an approved UHC Auth Proxy prefix.
-func NewInsightsIntegration(mgr ctrl.Manager, operatorName string, operatorNamespace string, userAgentPrefix string, log *logr.Logger) *InsightsIntegration {
+func NewInsightsIntegration(mgr ctrl.Manager, operatorName string, operatorNamespace string, userAgentPrefix string, enableWebhook bool,
+	log *logr.Logger) *InsightsIntegration {
 	return &InsightsIntegration{
 		Manager:         mgr,
 		Log:             log,
 		opName:          operatorName,
 		opNamespace:     operatorNamespace,
 		userAgentPrefix: userAgentPrefix,
+		enableWebhook:   enableWebhook,
 		OSUtils:         &common.DefaultOSUtils{},
 	}
 }
@@ -114,11 +117,13 @@ func (i *InsightsIntegration) Setup() error {
 		return err
 	}
 
-	// Create the mutating webhook for injecting the agent
-	err = i.createInsightsWebhook(insightsURL)
-	if err != nil {
-		i.Log.Error(err, "unable to create webhook", "webhook", "Pod")
-		return err
+	if i.enableWebhook {
+		// Create the mutating webhook for injecting the agent
+		err = i.createInsightsWebhook(insightsURL)
+		if err != nil {
+			i.Log.Error(err, "unable to create webhook", "webhook", "Pod")
+			return err
+		}
 	}
 
 	i.Log.Info("Insights proxy set up", "url", insightsURL.String())
