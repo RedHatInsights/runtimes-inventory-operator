@@ -61,6 +61,7 @@ func main() {
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
+	var enableWebhook bool
 	var tlsOpts []func(*tls.Config)
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -72,6 +73,8 @@ func main() {
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
+	flag.BoolVar(&enableWebhook, "enable-webhook", false,
+		"If set, a pod mutation webhook will be created to automatically inject an agent for gathering reports.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -184,7 +187,7 @@ func main() {
 	}
 
 	err = insights.NewInsightsIntegration(mgr,
-		operatorName, operatorNamespace, userAgentPrefix, &setupLog).Setup()
+		operatorName, operatorNamespace, userAgentPrefix, enableWebhook, &setupLog).Setup()
 	if err != nil {
 		setupLog.Error(err, "failed to set up Insights integration")
 		os.Exit(1)

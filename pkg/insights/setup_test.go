@@ -36,11 +36,12 @@ import (
 )
 
 type setupTestInput struct {
-	client      ctrlclient.Client
-	objs        []ctrlclient.Object
-	opName      string
-	opNamespace string
-	integration *insights.InsightsIntegration
+	client        ctrlclient.Client
+	objs          []ctrlclient.Object
+	opName        string
+	opNamespace   string
+	enableWebhook bool
+	integration   *insights.InsightsIntegration
 	*test.TestUtilsConfig
 	*test.InsightsTestResources
 }
@@ -75,6 +76,7 @@ var _ = Describe("InsightsIntegration", func() {
 
 			t.opName = deploy.Name
 			t.opNamespace = t.Namespace
+			t.enableWebhook = true
 		})
 
 		JustBeforeEach(func() {
@@ -90,7 +92,7 @@ var _ = Describe("InsightsIntegration", func() {
 
 			manager := test.NewFakeManager(t.client, s, &logger)
 
-			t.integration = insights.NewInsightsIntegration(manager, t.opName, t.opNamespace, t.UserAgentPrefix, &logger)
+			t.integration = insights.NewInsightsIntegration(manager, t.opName, t.opNamespace, t.UserAgentPrefix, t.enableWebhook, &logger)
 			t.integration.OSUtils = test.NewTestOSUtils(t.TestUtilsConfig)
 		})
 
