@@ -144,7 +144,7 @@ const apiCastConf = `{
         "proxy_rules": [
           {
             "http_method": "POST",
-            "pattern": "/",
+            "pattern": "/api/ingress/v1/upload",
             "metric_system_name": "hits",
             "delta": 1,
             "parameters": [],
@@ -208,7 +208,7 @@ const apiCastProxyConf = `{
         "proxy_rules": [
           {
             "http_method": "POST",
-            "pattern": "/",
+            "pattern": "/api/ingress/v1/upload",
             "metric_system_name": "hits",
             "delta": 1,
             "parameters": [],
