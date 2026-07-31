@@ -3,7 +3,7 @@ module github.com/RedHatInsights/runtimes-inventory-operator
 go 1.25.0
 
 require (
-	github.com/go-logr/logr v1.4.3
+	github.com/go-logr/logr v1.4.4
 	github.com/onsi/ginkgo/v2 v2.29.0
 	github.com/onsi/gomega v1.41.0
 	github.com/openshift/api v0.0.0-20260107143020-50517c6f4bfd // release-4.20
